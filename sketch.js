@@ -8,6 +8,10 @@ let realCoords = { lat: 46.053274, lng: 14.470221 };
 let locations = [];
 let panorama;
 let map;
+let poseNet;
+let poses = [];
+let initialNosePosition = {};
+let lestNosePosition = {};
 
 function setup() {
   loadLocations();
@@ -16,10 +20,12 @@ function setup() {
   initSeriously();
   initPano();
   initMap();
+  initPoses();
 }
 
 function draw() {
   chromaKey();
+  trackPose();
 }
 
 function loadLocations() {
@@ -30,8 +36,8 @@ function loadLocations() {
     locations = json;
   });
   $.ajaxSetup({
-    async: true
-});
+    async: true,
+  });
 }
 
 function getRandomLocation() {
@@ -109,18 +115,28 @@ function initPano() {
 }
 
 function initMap() {
-	map = new google.maps.Map(document.getElementById("map"), {
-		center: { lat: -34.397, lng: 150.644 },
-		minZoom: 3,
-		zoom: 3,
-		maxZoom: 15,
-		draggableCursor:'crosshair',
-		scrollwheel: true,
-	  });
-	
-	  map.addListener("click", (mapsMouseEvent) => {
-		let clickedCoords = mapsMouseEvent.latLng.toJSON();
-	  });
+  map = new google.maps.Map(document.getElementById("map"), {
+    center: { lat: -34.397, lng: 150.644 },
+    minZoom: 3,
+    zoom: 3,
+    maxZoom: 15,
+    draggableCursor: "crosshair",
+    scrollwheel: true,
+  });
+
+  map.addListener("click", (mapsMouseEvent) => {
+    let clickedCoords = mapsMouseEvent.latLng.toJSON();
+  });
+}
+
+function initPoses() {
+  poseNet = ml5.poseNet(capture, function () {
+    console.log("Model loaded.");
+  });
+
+  poseNet.on("pose", function (results) {
+    poses = results;
+  });
 }
 
 function chromaKey() {
@@ -135,4 +151,34 @@ function chromaKey() {
   chroma.clipWhite = 1;
 
   seriously.go();
+}
+
+function trackPose() {
+  for (let i = 0; i < poses.length; i++) {
+    let keypoint = poses[i].pose.keypoints[0];
+    if (
+      Object.keys(initialNosePosition).length === 0 &&
+      initialNosePosition.constructor === Object
+    ) {
+      initialNosePosition = { x: keypoint.position.x, y: keypoint.position.y };
+      lastNosePosition = { x: keypoint.position.x, y: keypoint.position.y };
+    }
+
+    let differenceX = initialNosePosition.x - keypoint.position.x;
+    let differenceY = keypoint.position.y - initialNosePosition.y;
+    if (
+      Math.abs(lastNosePosition.x - initialNosePosition.x) > 5 ||
+      Math.abs(lastNosePosition.y - initialNosePosition.y) > 3
+    ) {
+      let x = panorama.getPov().heading - differenceX / 100;
+      let y = panorama.getPov().pitch - differenceY / 100;
+      if (y < 90 && y > -90) {
+        panorama.setPov({
+          heading: x,
+          pitch: y,
+        });
+      }
+    }
+    lastNosePosition = { x: keypoint.position.x, y: keypoint.position.y };
+  }
 }
