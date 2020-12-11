@@ -15,8 +15,17 @@ body {
   text-align: center;
 }
 
+#pano {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  z-index: 1;
+}
+
+
 #p5canvas {
-  /* position: relative; */
+  position: relative;
+  bottom: 0;
   z-index: 20;
   bottom: 0;
 }

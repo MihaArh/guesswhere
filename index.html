@@ -4,16 +4,20 @@
     <meta charset="utf-8" />
     <title>geoguesser</title>
     <script type="text/javascript" src="libraries/p5.min.js"></script>
-	<script type="text/javascript" src="libraries/p5.dom.min.js"></script>
-	<script type="text/javascript" src="libraries/seriously.js"></script>
-    <script type="text/javascript" src="libraries/seriously.chroma.js"></script>
-	<link rel="stylesheet" href="./styles.css">
+    <script type="text/javascript" src="libraries/p5.dom.min.js"></script>
+    <script type="text/javascript" src="libraries/seriously.js"></script>
+	<script type="text/javascript" src="libraries/seriously.chroma.js"></script>
+	<script type="text/javascript" src="libraries/jquery-3.5.1.js"></script>
+	<script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBtCaCEBSsaWkmsIBhxgp5rb1n6lo7T6ac&libraries=&v=weekly"></script>
+    <link rel="stylesheet" href="./styles.css" />
   </head>
 
   <body>
     <script src="sketch.js"></script>
   </body>
   <div id="container">
+    <div id="pano"></div>
     <canvas id="p5canvas" z-index="5" width="720" height="400" webgl></canvas>
   </div>
 </html>
