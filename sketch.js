@@ -1,7 +1,7 @@
 let canvas;
 let capture;
-let w = 640;
-let h = 480;
+let w = 512;
+let h = 384;
 let chroma;
 let seriously;
 let realCoords = { lat: 46.053274, lng: 14.470221 };
@@ -14,6 +14,8 @@ let initialNosePosition = {};
 let lestNosePosition = {};
 let line;
 let selectedLocation = false;
+let destinationMarker;
+let clickedMarker;
 
 function setup() {
     loadLocations();
@@ -51,8 +53,8 @@ function initCamera() {
         {
             audio: false,
             video: {
-                width: { min: 320, ideal: 640, max: 640 },
-                height: { min: 240, ideal: 480, max: 480 },
+                width: { min: 320, ideal: w, max: w },
+                height: { min: 240, ideal: h, max: h },
             },
         },
         function () {
@@ -110,9 +112,9 @@ function initPano() {
     });
     panorama.addListener("pov_changed", () => {
         //DOL
-        console.log("POV heading: " + panorama.getPov().heading);
+        // console.log("POV heading: " + panorama.getPov().heading);
         // GOR
-        console.log("POV pitch: " + panorama.getPov().pitch);
+        // console.log("POV pitch: " + panorama.getPov().pitch);
     });
 }
 
@@ -128,17 +130,20 @@ function initMap() {
 
     map.addListener("click", (mapsMouseEvent) => {
         if (!selectedLocation) {
-            //   $("#myModal").modal("show");
             selectedLocation = true;
             let clickedCoords = mapsMouseEvent.latLng.toJSON();
             let dstn = getDistance(clickedCoords, realCoords);
-            console.log(dstn);
             drawMarkers(clickedCoords, realCoords);
             drawLines(clickedCoords, realCoords);
             var latlngbounds = new google.maps.LatLngBounds();
             latlngbounds.extend(clickedCoords);
             latlngbounds.extend(realCoords);
             map.fitBounds(latlngbounds);
+
+            showScore(dstn);
+            $("#restartGame").click(function () {
+                restartGame();
+            });
         }
     });
 }
@@ -234,8 +239,7 @@ function drawLines(clickedCoords, realCoords) {
     });
     addLine();
 }
-let destinationMarker;
-let clickedMarker;
+
 function drawMarkers(clickedCoords, realCoords) {
     var destinationIcon = {
         url: "assets/destination.svg",
@@ -274,13 +278,19 @@ function removeLine() {
     line.setMap(null);
 }
 
+function removeMapNotations() {
+    removeLine();
+    removeMarkers();
+}
+function removeMarkers() {
+    destinationMarker.setMap(null);
+    clickedMarker.setMap(null);
+}
 function rad(x) {
     return (x * Math.PI) / 180;
 }
 
 function getDistance(p1, p2) {
-    console.log(p1);
-    console.log(p2);
     var R = 6378137; // Earth’s mean radius in meter
     var dLat = rad(p2.lat - p1.lat);
     var dLong = rad(p2.lng - p1.lng);
@@ -293,4 +303,24 @@ function getDistance(p1, p2) {
     var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     var d = R * c;
     return d; // returns the distance in meter
+}
+
+function showScore(distance) {
+    let score = kFormatter(Math.floor(distance));
+    $("#myModal #score").text(score);
+    $("#myModal").modal("show");
+}
+
+function kFormatter(num) {
+    return Math.abs(num) > 999
+        ? Math.sign(num) * (Math.abs(num) / 1000).toFixed(1) + " km"
+        : Math.sign(num) * Math.abs(num) + " m";
+}
+
+function restartGame() {
+    $("#myModal").modal("hide");
+    removeMapNotations();
+    getRandomLocation();
+    panorama.setPosition(realCoords);
+    selectedLocation = false;
 }
