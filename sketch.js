@@ -6,6 +6,8 @@ let chroma;
 let seriously;
 let realCoords = { lat: 46.053274, lng: 14.470221 };
 let locations = [];
+let panorama;
+let map;
 
 function setup() {
   loadLocations();
@@ -13,6 +15,7 @@ function setup() {
   initCamera();
   initSeriously();
   initPano();
+  initMap();
 }
 
 function draw() {
@@ -103,6 +106,21 @@ function initPano() {
     // GOR
     console.log("POV pitch: " + panorama.getPov().pitch);
   });
+}
+
+function initMap() {
+	map = new google.maps.Map(document.getElementById("map"), {
+		center: { lat: -34.397, lng: 150.644 },
+		minZoom: 3,
+		zoom: 3,
+		maxZoom: 15,
+		draggableCursor:'crosshair',
+		scrollwheel: true,
+	  });
+	
+	  map.addListener("click", (mapsMouseEvent) => {
+		let clickedCoords = mapsMouseEvent.latLng.toJSON();
+	  });
 }
 
 function chromaKey() {

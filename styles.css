@@ -15,13 +15,20 @@ body {
   text-align: center;
 }
 
+#map,
 #pano {
   height: 100%;
   width: 100%;
+}
+
+#map {
+  cursor: crosshair;
+}
+
+#pano {
   position: absolute;
   z-index: 1;
 }
-
 
 #p5canvas {
   position: relative;
