@@ -12,6 +12,7 @@ let poseNet;
 let poses = [];
 let initialNosePosition = {};
 let lestNosePosition = {};
+let line;
 
 function setup() {
   loadLocations();
@@ -125,7 +126,10 @@ function initMap() {
   });
 
   map.addListener("click", (mapsMouseEvent) => {
-    let clickedCoords = mapsMouseEvent.latLng.toJSON();
+	let clickedCoords = mapsMouseEvent.latLng.toJSON();
+	let dstn = getDistance(clickedCoords, realCoords);
+    console.log(dstn);
+    drawLines(clickedCoords, realCoords);
   });
 }
 
@@ -181,4 +185,60 @@ function trackPose() {
     }
     lastNosePosition = { x: keypoint.position.x, y: keypoint.position.y };
   }
+}
+
+
+
+function drawLines(clickedCoords, realCoords) {
+  var lineSymbol = {
+    path: "M 0,-1 0,1",
+    strokeOpacity: 1,
+    scale: 4,
+  };
+
+  if (line !== undefined) {
+    removeLine();
+  }
+  line = new google.maps.Polyline({
+    path: [
+      new google.maps.LatLng(clickedCoords.lat, clickedCoords.lng),
+      new google.maps.LatLng(realCoords.lat, realCoords.lng),
+    ],
+    icons: [{
+        icon: lineSymbol,
+        offset: '0',
+        repeat: '20px'
+      }],
+    strokeOpacity: 0,
+  });
+  addLine();
+}
+
+function addLine() {
+  line.setMap(map);
+}
+
+function removeLine() {
+  line.setMap(null);
+}
+
+function rad(x) {
+  return (x * Math.PI) / 180;
+}
+
+function getDistance(p1, p2) {
+  console.log(p1);
+  console.log(p2);
+  var R = 6378137; // Earth’s mean radius in meter
+  var dLat = rad(p2.lat - p1.lat);
+  var dLong = rad(p2.lng - p1.lng);
+  var a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(rad(p1.lat)) *
+      Math.cos(rad(p2.lat)) *
+      Math.sin(dLong / 2) *
+      Math.sin(dLong / 2);
+  var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  var d = R * c;
+  return d; // returns the distance in meter
 }
