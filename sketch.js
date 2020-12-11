@@ -11,7 +11,7 @@ let map;
 let poseNet;
 let poses = [];
 let initialNosePosition = {};
-let lestNosePosition = {};
+let lastNosePosition = {};
 let line;
 let selectedLocation = false;
 let destinationMarker;
@@ -322,5 +322,6 @@ function restartGame() {
     removeMapNotations();
     getRandomLocation();
     panorama.setPosition(realCoords);
+    initialNosePosition = {};
     selectedLocation = false;
 }
