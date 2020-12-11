@@ -13,6 +13,7 @@ let poses = [];
 let initialNosePosition = {};
 let lestNosePosition = {};
 let line;
+let selectedLocation = false;
 
 function setup() {
   loadLocations();
@@ -126,10 +127,14 @@ function initMap() {
   });
 
   map.addListener("click", (mapsMouseEvent) => {
-	let clickedCoords = mapsMouseEvent.latLng.toJSON();
-	let dstn = getDistance(clickedCoords, realCoords);
-    console.log(dstn);
-    drawLines(clickedCoords, realCoords);
+    if (!selectedLocation) {
+      selectedLocation = true;
+      let clickedCoords = mapsMouseEvent.latLng.toJSON();
+      let dstn = getDistance(clickedCoords, realCoords);
+      console.log(dstn);
+      drawMarkers(clickedCoords, realCoords);
+      drawLines(clickedCoords, realCoords);
+    }
   });
 }
 
@@ -158,36 +163,39 @@ function chromaKey() {
 }
 
 function trackPose() {
-  for (let i = 0; i < poses.length; i++) {
-    let keypoint = poses[i].pose.keypoints[0];
-    if (
-      Object.keys(initialNosePosition).length === 0 &&
-      initialNosePosition.constructor === Object
-    ) {
-      initialNosePosition = { x: keypoint.position.x, y: keypoint.position.y };
+  if (!selectedLocation) {
+    for (let i = 0; i < poses.length; i++) {
+      let keypoint = poses[i].pose.keypoints[0];
+      if (
+        Object.keys(initialNosePosition).length === 0 &&
+        initialNosePosition.constructor === Object
+      ) {
+        initialNosePosition = {
+          x: keypoint.position.x,
+          y: keypoint.position.y,
+        };
+        lastNosePosition = { x: keypoint.position.x, y: keypoint.position.y };
+      }
+
+      let differenceX = initialNosePosition.x - keypoint.position.x;
+      let differenceY = keypoint.position.y - initialNosePosition.y;
+      if (
+        Math.abs(lastNosePosition.x - initialNosePosition.x) > 5 ||
+        Math.abs(lastNosePosition.y - initialNosePosition.y) > 3
+      ) {
+        let x = panorama.getPov().heading - differenceX / 100;
+        let y = panorama.getPov().pitch - differenceY / 100;
+        if (y < 90 && y > -90) {
+          panorama.setPov({
+            heading: x,
+            pitch: y,
+          });
+        }
+      }
       lastNosePosition = { x: keypoint.position.x, y: keypoint.position.y };
     }
-
-    let differenceX = initialNosePosition.x - keypoint.position.x;
-    let differenceY = keypoint.position.y - initialNosePosition.y;
-    if (
-      Math.abs(lastNosePosition.x - initialNosePosition.x) > 5 ||
-      Math.abs(lastNosePosition.y - initialNosePosition.y) > 3
-    ) {
-      let x = panorama.getPov().heading - differenceX / 100;
-      let y = panorama.getPov().pitch - differenceY / 100;
-      if (y < 90 && y > -90) {
-        panorama.setPov({
-          heading: x,
-          pitch: y,
-        });
-      }
-    }
-    lastNosePosition = { x: keypoint.position.x, y: keypoint.position.y };
   }
 }
-
-
 
 function drawLines(clickedCoords, realCoords) {
   var lineSymbol = {
@@ -204,14 +212,47 @@ function drawLines(clickedCoords, realCoords) {
       new google.maps.LatLng(clickedCoords.lat, clickedCoords.lng),
       new google.maps.LatLng(realCoords.lat, realCoords.lng),
     ],
-    icons: [{
+    icons: [
+      {
         icon: lineSymbol,
-        offset: '0',
-        repeat: '20px'
-      }],
+        offset: "0",
+        repeat: "20px",
+      },
+    ],
     strokeOpacity: 0,
   });
   addLine();
+}
+let destinationMarker;
+let clickedMarker;
+function drawMarkers(clickedCoords, realCoords) {
+  var destinationIcon = {
+    url: "assets/destination.svg",
+    anchor: new google.maps.Point(25, 50),
+    scaledSize: new google.maps.Size(50, 50),
+  };
+
+  destinationMarker = new google.maps.Marker({
+    position: realCoords,
+    map: map,
+    draggable: false,
+    icon: destinationIcon,
+    zIndex: -20,
+  });
+
+  var clickedIcon = {
+    url: "assets/man.svg",
+    anchor: new google.maps.Point(25, 50),
+    scaledSize: new google.maps.Size(50, 50),
+  };
+
+  clickedMarker = new google.maps.Marker({
+    position: clickedCoords,
+    map: map,
+    draggable: false,
+    icon: clickedIcon,
+    zIndex: -20,
+  });
 }
 
 function addLine() {
