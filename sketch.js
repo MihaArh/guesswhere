@@ -2,8 +2,6 @@ let canvas;
 let capture;
 let w = 512;
 let h = 384;
-let chroma;
-let seriously;
 let realCoords = { lat: 46.053274, lng: 14.470221 };
 let locations = [];
 let panorama;
@@ -20,14 +18,12 @@ let clickedMarker;
 function setup() {
     getRandomLocation();
     initCamera();
-    initSeriously();
     initPano();
     initMap();
     initPoses();
 }
 
 function draw() {
-    chromaKey();
     trackPose();
 }
 
@@ -38,9 +34,9 @@ function getRandomLocation() {
         url: url,
         type: "GET",
         success: function (res) {
-            realCoords = {lat: res.lat, lng: res.lng}; 
+            realCoords = { lat: res.lat, lng: res.lng };
         },
-        async: false
+        async: false,
     });
 }
 
@@ -63,19 +59,6 @@ function initCamera() {
     capture.hide();
 }
 
-function initSeriously() {
-    seriously = new Seriously();
-
-    var src = seriously.source("#p5video");
-    var target = seriously.target("#p5canvas");
-
-    chroma = seriously.effect("chroma");
-    chroma.source = src;
-    target.source = chroma;
-
-    seriously.go();
-}
-
 function initPano() {
     panorama = new google.maps.StreetViewPanorama(
         document.getElementById("pano"),
@@ -89,6 +72,11 @@ function initPano() {
             showRoadLabels: false,
             panControl: false,
             visible: true,
+            clickToGo: false,
+            scrollwheel: false,
+            linksControl: false,
+            panControl: false,
+            draggable: false,
         }
     );
     panorama.addListener("pano_changed", () => {
@@ -152,20 +140,6 @@ function initPoses() {
     poseNet.on("pose", function (results) {
         poses = results;
     });
-}
-
-function chromaKey() {
-    var r = 254 / 255;
-    var g = 255 / 255;
-    var b = 254 / 255;
-    chroma.screen = [r, g, b];
-
-    chroma.weight = 1;
-    chroma.balance = 1;
-    chroma.clipBlack = 1;
-    chroma.clipWhite = 1;
-
-    seriously.go();
 }
 
 function trackPose() {
