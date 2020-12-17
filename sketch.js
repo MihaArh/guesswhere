@@ -18,7 +18,6 @@ let destinationMarker;
 let clickedMarker;
 
 function setup() {
-    loadLocations();
     getRandomLocation();
     initCamera();
     initSeriously();
@@ -32,20 +31,17 @@ function draw() {
     trackPose();
 }
 
-function loadLocations() {
-    $.ajaxSetup({
-        async: false,
-    });
-    $.getJSON("locations.json", function (json) {
-        locations = json;
-    });
-    $.ajaxSetup({
-        async: true,
-    });
-}
-
 function getRandomLocation() {
-    realCoords = locations[Math.floor(Math.random() * locations.length)];
+    let url =
+        "http://halibun.pythonanywhere.com/api/random/?region=all&subregion=all&country=all&format=json";
+    $.ajax({
+        url: url,
+        type: "GET",
+        success: function (res) {
+            realCoords = {lat: res.lat, lng: res.lng}; 
+        },
+        async: false
+    });
 }
 
 function initCamera() {
