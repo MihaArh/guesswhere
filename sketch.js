@@ -191,7 +191,7 @@ function initMotionTracking() {
 
 function getRandomLocation() {
     let url =
-        "http://halibun.pythonanywhere.com/api/random/?region=all&subregion=all&country=all&format=json";
+        "https://halibun.pythonanywhere.com/api/random/?region=all&subregion=all&country=all&format=json";
     $.ajax({
         url: url,
         type: "GET",
