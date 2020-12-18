@@ -16,37 +16,79 @@
         />
         <script type="text/javascript" src="libraries/p5.min.js"></script>
         <script type="text/javascript" src="libraries/p5.dom.min.js"></script>
-        <script type="text/javascript" src="libraries/seriously.js"></script>
-        <script
-            type="text/javascript"
-            src="libraries/seriously.chroma.js"
-        ></script>
         <script type="text/javascript" src="libraries/jquery-3.5.1.js"></script>
-        <script type="text/javascript" src="libraries/ml5.min.js"></script>
-        <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+            crossorigin="anonymous"
+        ></script>
+        <script
+            src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js"
+            crossorigin="anonymous"
+        ></script>
+        <!-- <script type="text/javascript" src="libraries/ml5.min.js"></script> -->
+        <!-- <script src="https://polyfill.io/v3/polyfill.min.js?features=default"></script> -->
         <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBtCaCEBSsaWkmsIBhxgp5rb1n6lo7T6ac&libraries=&v=weekly"></script>
         <link rel="stylesheet" href="./styles.css" />
         <script src="sketch.js"></script>
     </head>
 
     <body>
-        <div class="w-100 h-100">
-            <div class="row h-50">
-                <div id="cnt">
+
+        <div class="container-fluid w-100 h-100 pa-0">
+            <div class="row h-100">
+                <div class="col">
                     <div id="pano"></div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid w-100 h-100 canvas-map">
+            <div class="row h-100 align-items-end">
+                <div class="col"></div>
+                <div class="col">
                     <canvas
+                        id="p5canvas"
+                        width="400"
+                        height="200"
+                        webgl
+                        class="selfie"
+                    ></canvas>
+                    <video class="input_video selfie" hidden></video>
+                </div>
+                <div class="col" style="height: 200px">
+                    <div id="map"></div>
+                </div>
+            </div>
+        </div>
+        <!-- <div class="w-100 h-100">
+            <div class="row h-100">
+                <div id="cnt ">
+                    <video class="input_video selfie" hidden></video>
+                    <div id="pano"></div>
+                    <div>
+                        <canvas
                         id="p5canvas"
                         z-index="5"
                         width="500"
                         height="250"
                         webgl
+                        class="fixed-bottom selfie"
                     ></canvas>
+                    </div>
+                    
                 </div>
             </div>
             <div class="row h-50">
                 <div id="map"></div>
             </div>
-        </div>
+        </div> -->
         <!-- Modal -->
         <div
             class="modal fade"
@@ -63,11 +105,13 @@
                             Your score:
                         </h5>
                     </div>
-                    <div class="modal-body text-center" id="score">
-
-					</div>
+                    <div class="modal-body text-center" id="score"></div>
                     <div class="modal-footer">
-                        <button id="restartGame" type="button" class="btn btn-primary">
+                        <button
+                            id="restartGame"
+                            type="button"
+                            class="btn btn-primary"
+                        >
                             Try Again
                         </button>
                     </div>
