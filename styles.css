@@ -15,20 +15,40 @@ body {
   text-align: center;
 }
 
-#map,
-#pano {
+#map {
   height: 100%;
   width: 100%;
+  bottom:0;
 }
 
 #pano {
+  height: 100%;
+  width: 100%;
   position: absolute;
   z-index: 1;
 }
 
 #p5canvas {
-  position: relative;
+  background-color: #fff;
   bottom: 0;
-  z-index: 20;
-  bottom: 0;
+  z-index: 5;
+}
+
+
+.selfie {
+  transform: scale(-1, 1);
+}
+
+.canvas-map{
+  position: absolute;
+  z-index: 10;
+  top: 0;
+}
+
+.container-fluid{
+  padding: 0;
+}
+
+.row {
+  margin-right: 0;
 }
