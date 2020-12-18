@@ -1,30 +1,192 @@
-let canvas;
-let capture;
-let w = 512;
-let h = 384;
 let realCoords = { lat: 46.053274, lng: 14.470221 };
-let locations = [];
 let panorama;
 let map;
-let poseNet;
-let poses = [];
 let initialNosePosition = {};
 let lastNosePosition = {};
+let initialNoseLandmarks = {};
 let line;
 let selectedLocation = false;
 let destinationMarker;
 let clickedMarker;
+let videoElement;
+let canvasElement;
+let controlsElement;
+let canvasCtx;
+let cameraLoaded = false;
+
+let testRespons = {
+    id: 23862,
+    lat: 45.51657104,
+    lng: 13.614371,
+    formatted_address: "Lucan 18a, 6320 Portorož - Portorose, Slovenia",
+    country: {
+        id: 49,
+        code: "SI",
+        country: "Slovenia",
+        capital: "Ljubljana",
+        calling_code: "386",
+        timezone: "UTC+01:00",
+        currency_symbol: "€",
+        population: 2064188,
+        subregion: {
+            id: 10,
+            subregion: "Southern Europe",
+            region: {
+                id: 1,
+                region: "Europe",
+            },
+        },
+    },
+};
+
+let leftHand = {};
+let rightHand = {};
+let face = {};
 
 function setup() {
+    document.getElementById("defaultCanvas0").remove();
+    videoElement = document.getElementsByClassName("input_video")[0];
+    canvasElement = document.getElementById("p5canvas");
+    controlsElement = document.getElementsByClassName("control-panel")[0];
+    canvasCtx = canvasElement.getContext("2d");
+    initMotionTracking();
     getRandomLocation();
-    initCamera();
     initPano();
     initMap();
-    initPoses();
 }
 
 function draw() {
-    trackPose();
+}
+
+function initMotionTracking() {
+    cameraLoaded = true;
+    function removeElementsExcept(landmarks, elements) {
+        for (let i = 0; i < landmarks.length; i++) {
+            if (!elements.includes(i)) {
+                delete landmarks[i];
+            }
+        }
+    }
+
+    function onResults(results) {
+        // Remove landmarks we don't want to draw.
+        // removeLandmarks(results);
+
+        // Draw the overlays.
+        canvasCtx.save();
+        canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+        canvasCtx.drawImage(
+            results.image,
+            0,
+            0,
+            canvasElement.width,
+            canvasElement.height
+        );
+
+        if (results.leftHandLandmarks) {
+            leftHand = {
+                wrist: results.leftHandLandmarks[0],
+                thumb: results.leftHandLandmarks[4],
+                index: results.leftHandLandmarks[8],
+            };
+        }
+        if (results.rightHandLandmarks) {
+            rightHand = {
+                wrist: results.rightHandLandmarks[0],
+                thumb: results.rightHandLandmarks[4],
+                index: results.rightHandLandmarks[8],
+            };
+        }
+        if (results.poseLandmarks) {
+            removeElementsExcept(results.poseLandmarks, [0, 1, 4, 9, 10]);
+            face = {
+                mouth: {
+                    x:
+                        (results.poseLandmarks[10].x -
+                            results.poseLandmarks[9].x) /
+                        2,
+                    y:
+                        (results.poseLandmarks[10].y -
+                            results.poseLandmarks[9].y) /
+                        2,
+                },
+                nose: results.poseLandmarks[0],
+                leftEye: results.poseLandmarks[1],
+                rightEye: results.poseLandmarks[4],
+            };
+        }
+
+        if (results.faceLandmarks) {
+            removeElementsExcept(results.faceLandmarks, [1]);
+            face["noseFace"] = results.faceLandmarks[1];
+        }
+
+
+        // Hands...
+        drawConnectors(
+            canvasCtx,
+            results.rightHandLandmarks,
+            HAND_CONNECTIONS,
+            { color: "#00CC00" }
+        );
+        drawLandmarks(canvasCtx, results.rightHandLandmarks, {
+            color: "#00ff91",
+            fillColor: "#0099ff",
+        });
+        drawConnectors(canvasCtx, results.leftHandLandmarks, HAND_CONNECTIONS, {
+            color: "#CC0000",
+        });
+        drawLandmarks(canvasCtx, results.leftHandLandmarks, {
+            color: "#FF0000",
+            fillColor: "#00FF00",
+        });
+
+        // Face...
+        drawLandmarks(canvasCtx, results.faceLandmarks, {
+            color: "#C0C0C070",
+            fillColor: "#FF0000",
+            lineWidth: 1,
+        });
+
+        drawLandmarks(canvasCtx, [initialNoseLandmarks], {
+            color: "#8CE519",
+            fillColor: "#34BEF9",
+            lineWidth: 1,
+        });
+
+        canvasCtx.restore();
+    }
+
+    const holistic = new Holistic({
+        locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic@0.1/${file}`;
+        },
+    });
+    holistic.setOptions({
+        upperBodyOnly: true,
+        smoothLandmarks: true,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5,
+    });
+    holistic.onResults(onResults);
+
+    /**
+     * Instantiate a camera. We'll feed each frame we receive into the solution.
+     */
+    const camera = new Camera(videoElement, {
+        onFrame: async () => {
+            leftHand = null;
+            rightHand = null;
+            face = null;
+            await holistic.send({ image: videoElement });
+            trackPose();
+            checkZoomPose();
+        },
+        width: 1280,
+        height: 720,
+        selfie: true,
+    });
+    camera.start();
 }
 
 function getRandomLocation() {
@@ -40,25 +202,6 @@ function getRandomLocation() {
     });
 }
 
-function initCamera() {
-    capture = createCapture(
-        {
-            audio: false,
-            video: {
-                width: { min: 320, ideal: w, max: w },
-                height: { min: 240, ideal: h, max: h },
-            },
-        },
-        function () {
-            console.log("Camera capture ready.");
-        }
-    );
-    capture.size(w, h);
-    capture.id("p5video");
-    capture.elt.setAttribute("playsinline", "");
-    capture.hide();
-}
-
 function initPano() {
     panorama = new google.maps.StreetViewPanorama(
         document.getElementById("pano"),
@@ -68,6 +211,7 @@ function initPano() {
                 heading: 0,
                 pitch: 0,
             },
+            zoom: 1,
             addressControl: false,
             showRoadLabels: false,
             panControl: false,
@@ -110,6 +254,7 @@ function initMap() {
         maxZoom: 15,
         draggableCursor: "crosshair",
         scrollwheel: true,
+        streetViewControl: false,
     });
 
     map.addListener("click", (mapsMouseEvent) => {
@@ -132,54 +277,46 @@ function initMap() {
     });
 }
 
-function initPoses() {
-    poseNet = ml5.poseNet(capture, function () {
-        console.log("Model loaded.");
-    });
-
-    poseNet.on("pose", function (results) {
-        poses = results;
-    });
-}
-
 function trackPose() {
-    if (!selectedLocation) {
-        for (let i = 0; i < poses.length; i++) {
-            let keypoint = poses[i].pose.keypoints[0];
-            if (
-                Object.keys(initialNosePosition).length === 0 &&
-                initialNosePosition.constructor === Object
-            ) {
-                initialNosePosition = {
-                    x: keypoint.position.x,
-                    y: keypoint.position.y,
-                };
-                lastNosePosition = {
-                    x: keypoint.position.x,
-                    y: keypoint.position.y,
-                };
-            }
-
-            let differenceX = initialNosePosition.x - keypoint.position.x;
-            let differenceY = keypoint.position.y - initialNosePosition.y;
-            if (
-                Math.abs(lastNosePosition.x - initialNosePosition.x) > 5 ||
-                Math.abs(lastNosePosition.y - initialNosePosition.y) > 3
-            ) {
-                let x = panorama.getPov().heading - differenceX / 100;
-                let y = panorama.getPov().pitch - differenceY / 100;
-                if (y < 90 && y > -90) {
-                    panorama.setPov({
-                        heading: x,
-                        pitch: y,
-                    });
-                }
-            }
-            lastNosePosition = {
-                x: keypoint.position.x,
-                y: keypoint.position.y,
+    if (!selectedLocation && face && face.noseFace) {
+        let currentNoseX = face.noseFace.x;
+        let currentNoseY = face.noseFace.y;
+        if (
+            Object.keys(initialNosePosition).length == 0 &&
+            initialNosePosition.constructor === Object
+        ) {
+            initialNosePosition = {
+                x: currentNoseX,
+                y: currentNoseY,
             };
+
+            initialNoseLandmarks = initialNosePosition;
+            lastNosePosition = initialNosePosition;
         }
+
+        let distanceFromInitial = dist(
+            initialNosePosition.x,
+            initialNosePosition.y,
+            currentNoseX,
+            currentNoseY
+        );
+
+        let differenceX = initialNosePosition.x - currentNoseX;
+        let differenceY = initialNosePosition.y - currentNoseY;
+        if (distanceFromInitial > 1 / 28) {
+            let x = panorama.getPov().heading + differenceX * 4;
+            let y = panorama.getPov().pitch + differenceY * 4;
+            if (y < 90 && y > -90) {
+                panorama.setPov({
+                    heading: x,
+                    pitch: y,
+                });
+            }
+        }
+        lastNosePosition = {
+            x: currentNoseX,
+            y: currentNoseY,
+        };
     }
 }
 
@@ -294,4 +431,49 @@ function restartGame() {
     panorama.setPosition(realCoords);
     initialNosePosition = {};
     selectedLocation = false;
+}
+
+function checkZoomPose() {
+    if (face && leftHand && rightHand) {
+        let treshold = 0.07;
+        // debugger
+
+        let distHandLeft = dist(
+            leftHand.index.x,
+            leftHand.index.y,
+            leftHand.thumb.x,
+            leftHand.thumb.y
+        );
+        let distHandRight = dist(
+            rightHand.index.x,
+            rightHand.index.y,
+            rightHand.thumb.x,
+            rightHand.thumb.y
+        );
+
+        let rightThumbToNose = dist(
+            rightHand.thumb.x,
+            rightHand.thumb.y,
+            face.rightEye.x,
+            face.rightEye.y
+        );
+        let leftThumbToNose = dist(
+            leftHand.thumb.x,
+            leftHand.thumb.y,
+            face.leftEye.x,
+            face.leftEye.y
+        );
+        if (
+            distHandLeft < treshold &&
+            distHandRight < treshold &&
+            rightThumbToNose < treshold &&
+            leftThumbToNose < treshold
+        ) {
+            panorama.setZoom(3);
+        } else {
+            panorama.setZoom(1);
+        }
+    } else {
+        panorama.setZoom(1);
+    }
 }
