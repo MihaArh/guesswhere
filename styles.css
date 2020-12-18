@@ -45,9 +45,7 @@ body {
   top: 0;
 }
 
-.container-fluid{
-  padding: 0;
-}
+
 
 .row {
   margin-right: 0;
@@ -65,4 +63,11 @@ body {
 
 .icons{
   text-align: end;
+}
+
+.loading{
+  background-color: black;
+  position: absolute;
+  top: 0;
+  z-index: 100;
 }

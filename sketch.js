@@ -56,6 +56,7 @@ function setup() {
     canvasElement = document.getElementById("p5canvas");
     controlsElement = document.getElementsByClassName("control-panel")[0];
     canvasCtx = canvasElement.getContext("2d");
+    funFact();
     initMotionTracking();
     getRandomLocation();
     initPano();
@@ -77,10 +78,9 @@ function initMotionTracking() {
     }
 
     function onResults(results) {
-        // Remove landmarks we don't want to draw.
-        // removeLandmarks(results);
-
-        // Draw the overlays.
+        $("#funFact").removeClass("animate__backInLeft");
+        $("#funFact").addClass("animate__backOutLeft");
+        $(".loading").fadeOut("2000");
         canvasCtx.save();
         canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
         canvasCtx.drawImage(
@@ -178,7 +178,7 @@ function initMotionTracking() {
     holistic.setOptions({
         upperBodyOnly: true,
         smoothLandmarks: true,
-        minDetectionConfidence: 0.5,
+        minDetectionConfidence: 0.2,
         minTrackingConfidence: 0.5,
     });
     holistic.onResults(onResults);
@@ -203,10 +203,13 @@ function initMotionTracking() {
 }
 
 function getRandomLocation() {
-    let url =
-        `https://halibun.pythonanywhere.com/api/random/?region=${selectedRegion.replace(" ", "%20")}&subregion=${selectedSubregion.replace(" ", "%20")}&country=${selectedCountry.replace(" ", "%20")}&format=json`;
-
-    console.log(url);
+    let url = `https://halibun.pythonanywhere.com/api/random/?region=${selectedRegion.replace(
+        " ",
+        "%20"
+    )}&subregion=${selectedSubregion.replace(
+        " ",
+        "%20"
+    )}&country=${selectedCountry.replace(" ", "%20")}&format=json`;
     $.ajax({
         url: url,
         type: "GET",
@@ -316,14 +319,23 @@ function initButtons() {
         showCameraLabels = this.checked;
     });
 
-    $("#saveSettings").click(function(){
+    $("#saveSettings").click(function () {
         console.log("Ha");
         showCamera = $("#cameraSwitch").checked;
         showCameraLabels = true;
 
-        selectedRegion =$("#regionsSelect option:selected").val() == 0 ? "all" : $("#regionsSelect option:selected").text();
-        selectedSubregion = $("#subregionsSelect option:selected").val() == 0 ? "all" : $("#subregionsSelect option:selected").text();
-        selectedCountry = $("#countriesSelect option:selected").val() == 0 ? "all" : $("#countriesSelect option:selected").text();
+        selectedRegion =
+            $("#regionsSelect option:selected").val() == 0
+                ? "all"
+                : $("#regionsSelect option:selected").text();
+        selectedSubregion =
+            $("#subregionsSelect option:selected").val() == 0
+                ? "all"
+                : $("#subregionsSelect option:selected").text();
+        selectedCountry =
+            $("#countriesSelect option:selected").val() == 0
+                ? "all"
+                : $("#countriesSelect option:selected").text();
         getRandomLocation();
         restartGame();
         console.log("Restart");
@@ -388,7 +400,6 @@ function initSelections() {
         async: false,
     });
 
-
     $("#regionsSelect").change(function () {
         let subregions = $("#subregionsSelect option");
         let region_id = $(this).val();
@@ -414,7 +425,6 @@ function initSelections() {
                 ).hide();
             });
         }
-        
     });
     $("#subregionsSelect").change(function () {
         let subregion_id = $(this).val();
@@ -444,10 +454,7 @@ function initSelections() {
                 let hiddenSubregions = [];
                 let subregions = $("#subregionsSelect option");
                 $.each(subregions, function (i, item) {
-                    if (
-                        $(item).attr("region") != region &&
-                        item.value != 0
-                    ) {
+                    if ($(item).attr("region") != region && item.value != 0) {
                         $(
                             "#subregionsSelect option[value=" +
                                 $(this).val() +
@@ -466,8 +473,8 @@ function initSelections() {
                 });
             }
         }
-        
     });
+
     $("#countriesSelect").change(function () {
         $("#regionsSelect option").show();
         $("#subregionsSelect option").show();
@@ -480,7 +487,6 @@ function initSelections() {
             let region = $("#subregionsSelect option:selected").attr("region");
             $("#regionsSelect").val(region);
         }
-        
     });
 }
 
@@ -593,7 +599,7 @@ function addLine() {
 }
 
 function removeLine() {
-    if (line){
+    if (line) {
         line.setMap(null);
     }
 }
@@ -603,7 +609,7 @@ function removeMapNotations() {
     removeMarkers();
 }
 function removeMarkers() {
-    if (destinationMarker && clickedMarker){
+    if (destinationMarker && clickedMarker) {
         destinationMarker.setMap(null);
         clickedMarker.setMap(null);
     }
@@ -651,7 +657,6 @@ function restartGame() {
 function checkZoomPose() {
     if (face && leftHand && rightHand) {
         let treshold = 0.07;
-        // debugger
 
         let distHandLeft = dist(
             leftHand.index.x,
@@ -691,4 +696,52 @@ function checkZoomPose() {
     } else {
         panorama.setZoom(1);
     }
+}
+
+function funFact() {
+    let url = `https://halibun.pythonanywhere.com/api/random/`;
+    $.ajax({
+        url: url,
+        type: "GET",
+        success: function (res) {
+            let country = res.country;
+            let facts = [
+                { capital: country.capital },
+                { calling_code: country.calling_code },
+                { currency_symbol: country.currency_symbol },
+                { population: country.population },
+            ];
+
+            const randomElement =
+                facts[Math.floor(Math.random() * facts.length)];
+            console.log(Object.keys(randomElement));
+            switch (Object.keys(randomElement)[0]) {
+                case "capital":
+                    $("#funFact").text(
+                        `Did you know that capital of ${country.country} is ${randomElement.capital}?`
+                    );
+                    break;
+                case "calling_code":
+                    $("#funFact").text(
+                        `Did you know that the calling code of ${country.country} is +${randomElement.calling_code}?`
+                    );
+                    break;
+                case "currency_symbol":
+                    $("#funFact").text(
+                        `Did you know that the currency symbol of ${country.country} is ${randomElement.currency_symbol}?`
+                    );
+                    break;
+                case "population":
+                    var populationDots = randomElement.population
+                        .toString()
+                        .replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1.");
+                    $("#funFact").text(
+                        `Did you know that the population of ${country.country} is ${populationDots}?`
+                    );
+                    break;
+            }
+            $("#funFact").addClass("animate__backInLeft");
+        },
+        async: false,
+    });
 }
