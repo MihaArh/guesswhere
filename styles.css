@@ -52,3 +52,17 @@ body {
 .row {
   margin-right: 0;
 }
+.settings {
+  position: absolute;
+  z-index: 15;
+  top: 0;
+}
+
+.settings button{
+  width: 60px;
+  height: 60px;
+}
+
+.icons{
+  text-align: end;
+}

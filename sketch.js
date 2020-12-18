@@ -14,6 +14,13 @@ let controlsElement;
 let canvasCtx;
 let cameraLoaded = false;
 
+let showCamera = true;
+let showCameraLabels = true;
+
+let selectedRegion = "all";
+let selectedSubregion = "all";
+let selectedCountry = "all";
+
 let testRespons = {
     id: 23862,
     lat: 45.51657104,
@@ -49,14 +56,15 @@ function setup() {
     canvasElement = document.getElementById("p5canvas");
     controlsElement = document.getElementsByClassName("control-panel")[0];
     canvasCtx = canvasElement.getContext("2d");
-    initMotionTracking();
+    // initMotionTracking();
     getRandomLocation();
     initPano();
     initMap();
+    initButtons();
+    initSelections();
 }
 
-function draw() {
-}
+function draw() {}
 
 function initMotionTracking() {
     cameraLoaded = true;
@@ -120,39 +128,44 @@ function initMotionTracking() {
             removeElementsExcept(results.faceLandmarks, [1]);
             face["noseFace"] = results.faceLandmarks[1];
         }
+        if (showCameraLabels) {
+            // Hands...
+            drawConnectors(
+                canvasCtx,
+                results.rightHandLandmarks,
+                HAND_CONNECTIONS,
+                { color: "#00CC00" }
+            );
+            drawLandmarks(canvasCtx, results.rightHandLandmarks, {
+                color: "#00ff91",
+                fillColor: "#0099ff",
+            });
+            drawConnectors(
+                canvasCtx,
+                results.leftHandLandmarks,
+                HAND_CONNECTIONS,
+                {
+                    color: "#CC0000",
+                }
+            );
+            drawLandmarks(canvasCtx, results.leftHandLandmarks, {
+                color: "#FF0000",
+                fillColor: "#00FF00",
+            });
 
+            // Face...
+            drawLandmarks(canvasCtx, results.faceLandmarks, {
+                color: "#C0C0C070",
+                fillColor: "#FF0000",
+                lineWidth: 1,
+            });
 
-        // Hands...
-        drawConnectors(
-            canvasCtx,
-            results.rightHandLandmarks,
-            HAND_CONNECTIONS,
-            { color: "#00CC00" }
-        );
-        drawLandmarks(canvasCtx, results.rightHandLandmarks, {
-            color: "#00ff91",
-            fillColor: "#0099ff",
-        });
-        drawConnectors(canvasCtx, results.leftHandLandmarks, HAND_CONNECTIONS, {
-            color: "#CC0000",
-        });
-        drawLandmarks(canvasCtx, results.leftHandLandmarks, {
-            color: "#FF0000",
-            fillColor: "#00FF00",
-        });
-
-        // Face...
-        drawLandmarks(canvasCtx, results.faceLandmarks, {
-            color: "#C0C0C070",
-            fillColor: "#FF0000",
-            lineWidth: 1,
-        });
-
-        drawLandmarks(canvasCtx, [initialNoseLandmarks], {
-            color: "#8CE519",
-            fillColor: "#34BEF9",
-            lineWidth: 1,
-        });
+            drawLandmarks(canvasCtx, [initialNoseLandmarks], {
+                color: "#8CE519",
+                fillColor: "#34BEF9",
+                lineWidth: 1,
+            });
+        }
 
         canvasCtx.restore();
     }
@@ -191,7 +204,9 @@ function initMotionTracking() {
 
 function getRandomLocation() {
     let url =
-        "https://halibun.pythonanywhere.com/api/random/?region=all&subregion=all&country=all&format=json";
+        `https://halibun.pythonanywhere.com/api/random/?region=${selectedRegion.replace(" ", "%20")}&subregion=${selectedSubregion.replace(" ", "%20")}&country=${selectedCountry.replace(" ", "%20")}&format=json`;
+
+    console.log(url);
     $.ajax({
         url: url,
         type: "GET",
@@ -224,19 +239,19 @@ function initPano() {
         }
     );
     panorama.addListener("pano_changed", () => {
-        console.log(panorama.getPano());
+        // console.log(panorama.getPano());
     });
     panorama.addListener("links_changed", () => {
         const links = panorama.getLinks();
-        console.log(links);
+        // console.log(links);
     });
     panorama.addListener("position_changed", () => {
         realCoords = {
             lat: panorama.location.latLng.lat(),
             lng: panorama.location.latLng.lng(),
         };
-        console.log(panorama.location.latLng.lat());
-        console.log(panorama.location.latLng.lng());
+        // console.log(panorama.location.latLng.lat());
+        // console.log(panorama.location.latLng.lng());
     });
     panorama.addListener("pov_changed", () => {
         //DOL
@@ -276,6 +291,202 @@ function initMap() {
         }
     });
 }
+
+function initButtons() {
+    $("#btn-settings").click(function () {
+        $("#settings-modal").modal("toggle");
+    });
+
+    $("#btn-hint").click(function () {
+        console.log("Hint");
+    });
+
+    $("#cameraSwitch").change(function () {
+        if (this.checked) {
+            $("#p5canvas").show("slow");
+            $("#cameraLabelsSwitch").prop("disabled", false);
+        } else {
+            $("#p5canvas").hide("slow");
+            $("#cameraLabelsSwitch").prop("disabled", true);
+        }
+        showCamera = this.checked;
+    });
+
+    $("#cameraLabelsSwitch").change(function () {
+        showCameraLabels = this.checked;
+    });
+
+    $("#saveSettings").click(function(){
+        console.log("Ha");
+        showCamera = $("#cameraSwitch").checked;
+        showCameraLabels = true;
+
+        selectedRegion =$("#regionsSelect option:selected").val() == 0 ? "all" : $("#regionsSelect option:selected").text();
+        selectedSubregion = $("#subregionsSelect option:selected").val() == 0 ? "all" : $("#subregionsSelect option:selected").text();
+        selectedCountry = $("#countriesSelect option:selected").val() == 0 ? "all" : $("#countriesSelect option:selected").text();
+        getRandomLocation();
+        restartGame();
+        console.log("Restart");
+    });
+}
+
+function initSelections() {
+    let regionsApiUrl =
+        "https://halibun.pythonanywhere.com/api/regions/?ordering=region&sort=DESC";
+    let subregionsApiUrl =
+        "https://halibun.pythonanywhere.com/api/subregions/?ordering=subregion&sort=DESC";
+    let countriesApiUrl =
+        "https://halibun.pythonanywhere.com/api/countries/?ordering=country&sort=DESC";
+
+    $.ajax({
+        url: regionsApiUrl,
+        type: "GET",
+        success: function (res) {
+            $.each(res, function (i, item) {
+                $("#regionsSelect").append(
+                    $("<option>", {
+                        value: item.id,
+                        text: item.region,
+                    })
+                );
+            });
+        },
+        async: false,
+    });
+
+    $.ajax({
+        url: subregionsApiUrl,
+        type: "GET",
+        success: function (res) {
+            $.each(res, function (i, item) {
+                $("#subregionsSelect").append(
+                    $("<option>", {
+                        value: item.id,
+                        text: item.subregion,
+                        region: item.region,
+                    })
+                );
+            });
+        },
+        async: false,
+    });
+
+    $.ajax({
+        url: countriesApiUrl,
+        type: "GET",
+        success: function (res) {
+            $.each(res, function (i, item) {
+                $("#countriesSelect").append(
+                    $("<option>", {
+                        value: item.id,
+                        text: item.country,
+                        subregion: item.subregion,
+                    })
+                );
+            });
+        },
+        async: false,
+    });
+
+
+    $("#regionsSelect").change(function () {
+        let subregions = $("#subregionsSelect option");
+        let region_id = $(this).val();
+        $("#subregionsSelect option").show();
+        $("#countriesSelect option").show();
+        $("#subregionsSelect").val(0);
+        $("#countriesSelect").val(0);
+        if (region_id != 0) {
+            $("#subregionsSelect").val(0);
+            let hiddenSubregions = [];
+            $.each(subregions, function (i, item) {
+                if ($(item).attr("region") != region_id && item.value != 0) {
+                    $(
+                        "#subregionsSelect option[value=" + $(this).val() + "]"
+                    ).hide();
+                    hiddenSubregions.push($(this).val());
+                }
+            });
+
+            hiddenSubregions.forEach(function (subregionValue) {
+                $(
+                    "#countriesSelect option[subregion=" + subregionValue + "]"
+                ).hide();
+            });
+        }
+        
+    });
+    $("#subregionsSelect").change(function () {
+        let subregion_id = $(this).val();
+        $("#countriesSelect option").show();
+        $("#countriesSelect").val(0);
+        if (subregion_id != 0) {
+            let region_id = $("#subregionsSelect option:selected").attr(
+                "region"
+            );
+            $("#regionsSelect").val(region_id);
+            $("#countriesSelect option").show();
+            let countries = $("#countriesSelect option");
+            $.each(countries, function (i, item) {
+                if (
+                    $(item).attr("subregion") != subregion_id &&
+                    item.value != 0
+                ) {
+                    $(
+                        "#countriesSelect option[value=" + $(item).val() + "]"
+                    ).hide();
+                }
+            });
+        } else {
+            let region = $("#regionsSelect option:selected").val();
+            if (region != 0) {
+                $("#subregionsSelect").val(0);
+                let hiddenSubregions = [];
+                let subregions = $("#subregionsSelect option");
+                $.each(subregions, function (i, item) {
+                    if (
+                        $(item).attr("region") != region &&
+                        item.value != 0
+                    ) {
+                        $(
+                            "#subregionsSelect option[value=" +
+                                $(this).val() +
+                                "]"
+                        ).hide();
+                        hiddenSubregions.push($(this).val());
+                    }
+                });
+
+                hiddenSubregions.forEach(function (subregionValue) {
+                    $(
+                        "#countriesSelect option[subregion=" +
+                            subregionValue +
+                            "]"
+                    ).hide();
+                });
+            }
+        }
+        
+    });
+    $("#countriesSelect").change(function () {
+        $("#regionsSelect option").show();
+        $("#subregionsSelect option").show();
+        let country_id = $(this).val();
+        if (country_id != 0) {
+            let subregion_id = $("#countriesSelect option:selected").attr(
+                "subregion"
+            );
+            $("#subregionsSelect").val(subregion_id);
+            let region = $("#subregionsSelect option:selected").attr("region");
+            $("#regionsSelect").val(region);
+        }
+        
+    });
+}
+
+function getRegions(id) {}
+function getSubregions() {}
+function getCountries() {}
 
 function trackPose() {
     if (!selectedLocation && face && face.noseFace) {
@@ -382,7 +593,9 @@ function addLine() {
 }
 
 function removeLine() {
-    line.setMap(null);
+    if (line){
+        line.setMap(null);
+    }
 }
 
 function removeMapNotations() {
@@ -390,8 +603,10 @@ function removeMapNotations() {
     removeMarkers();
 }
 function removeMarkers() {
-    destinationMarker.setMap(null);
-    clickedMarker.setMap(null);
+    if (destinationMarker && clickedMarker){
+        destinationMarker.setMap(null);
+        clickedMarker.setMap(null);
+    }
 }
 function rad(x) {
     return (x * Math.PI) / 180;

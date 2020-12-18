@@ -14,6 +14,10 @@
             integrity="sha384-giJF6kkoqNQ00vy+HMDP7azOuL0xtbfIcaT9wjKHr8RbDVddVHyTfAAsrekwKmP1"
             crossorigin="anonymous"
         />
+        <script
+            src="https://kit.fontawesome.com/4f9c54d899.js"
+            crossorigin="anonymous"
+        ></script>
         <script type="text/javascript" src="libraries/p5.min.js"></script>
         <script type="text/javascript" src="libraries/p5.dom.min.js"></script>
         <script type="text/javascript" src="libraries/jquery-3.5.1.js"></script>
@@ -41,7 +45,6 @@
     </head>
 
     <body>
-
         <div class="container-fluid w-100 h-100 pa-0">
             <div class="row h-100">
                 <div class="col">
@@ -67,29 +70,118 @@
                 </div>
             </div>
         </div>
-        <!-- <div class="w-100 h-100">
-            <div class="row h-100">
-                <div id="cnt ">
-                    <video class="input_video selfie" hidden></video>
-                    <div id="pano"></div>
-                    <div>
-                        <canvas
-                        id="p5canvas"
-                        z-index="5"
-                        width="500"
-                        height="250"
-                        webgl
-                        class="fixed-bottom selfie"
-                    ></canvas>
-                    </div>
-                    
+        <div class="container-fluid w-100 h-50 settings">
+            <div class="row">
+                <div class="col p-2 icons">
+                    <button
+                        id="btn-settings"
+                        type="button"
+                        class="btn btn-primary btn-lg"
+                        data-placement="left"
+                        title="Settings"
+                        data-toggle="modal"
+                        data-target="#settings-modal"
+                    >
+                        <i class="fa fa-sliders-h"></i>
+                    </button>
                 </div>
             </div>
-            <div class="row h-50">
-                <div id="map"></div>
+            <div class="row">
+                <div class="col p-2 icons">
+                    <button
+                        id="btn-hint"
+                        type="button"
+                        class="btn btn-info btn-lg"
+                        data-toggle="tooltip"
+                        data-placement="left"
+                        title="Hint"
+                    >
+                        <i class="fa fa-lightbulb"></i>
+                    </button>
+                </div>
             </div>
-        </div> -->
-        <!-- Modal -->
+        </div>
+
+        <div class="container w-100 h-100 loading">
+            <div class="row">
+                <div class="col"></div>
+                <div class="col"></div>
+                <div class="col"></div>
+            </div>
+        </div>
+
+        <!-- Settings Modal -->
+        <div class="modal fade" id="settings-modal" tabindex="100" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-xl">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <h5 class="modal-title" id="exampleModalLabel">Nastavitve</h5>
+                  <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="container">
+                        <div class="row p-2">
+                            <div class="col">
+                                <div class="form-check form-switch">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        id="cameraSwitch"
+                                        checked
+                                    />
+                                    <label
+                                        class="form-check-label"
+                                        for="cameraSwitch"
+                                        >Prikaži kamero</label
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row p-2">
+                            <div class="col">
+                                <div class="form-check form-switch">
+                                    <input
+                                        class="form-check-input"
+                                        type="checkbox"
+                                        id="cameraLabelsSwitch"
+                                        checked
+                                    />
+                                    <label
+                                        class="form-check-label"
+                                        for="cameraLabelsSwitch"
+                                        >Prikaži označbe na kameri</label
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row p-2">
+                            <div class="col">
+                                <select id="regionsSelect" class="form-select form-select-sm" aria-label=".form-select-lg example">
+                                    <option value="0" selected>Vse celine</option>
+                                  </select>
+                            </div>
+                            <div class="col">
+                                <select id="subregionsSelect" class="form-select form-select-sm" aria-label=".form-select-lg example">
+                                    <option value="0" selected>Vse podceline</option>
+                                  </select>
+                            </div>
+                            <div class="col">
+                                <select id="countriesSelect" class="form-select form-select-sm" aria-label=".form-select-lg example">
+                                    <option value="0" selected>Vse države</option>
+                                  </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zapri</button>
+                    <button type="button" id="saveSettings" class="btn btn-primary" data-bs-dismiss="modal">Shrani spremembe</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        
+
         <div
             class="modal fade"
             id="myModal"
