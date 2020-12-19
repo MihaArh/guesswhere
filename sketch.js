@@ -21,34 +21,18 @@ let selectedRegion = "all";
 let selectedSubregion = "all";
 let selectedCountry = "all";
 
-let testRespons = {
-    id: 23862,
-    lat: 45.51657104,
-    lng: 13.614371,
-    formatted_address: "Lucan 18a, 6320 Portorož - Portorose, Slovenia",
-    country: {
-        id: 49,
-        code: "SI",
-        country: "Slovenia",
-        capital: "Ljubljana",
-        calling_code: "386",
-        timezone: "UTC+01:00",
-        currency_symbol: "€",
-        population: 2064188,
-        subregion: {
-            id: 10,
-            subregion: "Southern Europe",
-            region: {
-                id: 1,
-                region: "Europe",
-            },
-        },
-    },
-};
+let isLoaded = false;
+
+let hints = new Set();
+let usedHints = [];
 
 let leftHand = {};
 let rightHand = {};
 let face = {};
+
+let stopAnimation = false;
+let weatherSketch = null;
+const fpsControl = new FPS();
 
 function setup() {
     document.getElementById("defaultCanvas0").remove();
@@ -56,9 +40,14 @@ function setup() {
     canvasElement = document.getElementById("p5canvas");
     controlsElement = document.getElementsByClassName("control-panel")[0];
     canvasCtx = canvasElement.getContext("2d");
-    funFact();
     initMotionTracking();
+    // TODO remove
+    // $("#funFact").removeClass("animate__backInLeft");
+    // $("#funFact").addClass("animate__backOutLeft");
+    // $(".loading").fadeOut("2000");
+    funFact();
     getRandomLocation();
+
     initPano();
     initMap();
     initButtons();
@@ -66,6 +55,10 @@ function setup() {
 }
 
 function draw() {}
+
+function windowResized() {
+    resizeCanvas(windowWidth, windowHeight);
+}
 
 function initMotionTracking() {
     cameraLoaded = true;
@@ -78,6 +71,8 @@ function initMotionTracking() {
     }
 
     function onResults(results) {
+        isLoaded = true;
+        fpsControl.tick();
         $("#funFact").removeClass("animate__backInLeft");
         $("#funFact").addClass("animate__backOutLeft");
         $(".loading").fadeOut("2000");
@@ -130,24 +125,24 @@ function initMotionTracking() {
         }
         if (showCameraLabels) {
             // Hands...
-            drawConnectors(
-                canvasCtx,
-                results.rightHandLandmarks,
-                HAND_CONNECTIONS,
-                { color: "#00CC00" }
-            );
+            // drawConnectors(
+            //     canvasCtx,
+            //     results.rightHandLandmarks,
+            //     HAND_CONNECTIONS,
+            //     { color: "#00CC00" }
+            // );
             drawLandmarks(canvasCtx, results.rightHandLandmarks, {
                 color: "#00ff91",
                 fillColor: "#0099ff",
             });
-            drawConnectors(
-                canvasCtx,
-                results.leftHandLandmarks,
-                HAND_CONNECTIONS,
-                {
-                    color: "#CC0000",
-                }
-            );
+            // drawConnectors(
+            //     canvasCtx,
+            //     results.leftHandLandmarks,
+            //     HAND_CONNECTIONS,
+            //     {
+            //         color: "#CC0000",
+            //     }
+            // );
             drawLandmarks(canvasCtx, results.leftHandLandmarks, {
                 color: "#FF0000",
                 fillColor: "#00FF00",
@@ -178,14 +173,11 @@ function initMotionTracking() {
     holistic.setOptions({
         upperBodyOnly: true,
         smoothLandmarks: true,
-        minDetectionConfidence: 0.2,
+        minDetectionConfidence: 0.7,
         minTrackingConfidence: 0.5,
     });
     holistic.onResults(onResults);
 
-    /**
-     * Instantiate a camera. We'll feed each frame we receive into the solution.
-     */
     const camera = new Camera(videoElement, {
         onFrame: async () => {
             leftHand = null;
@@ -199,7 +191,12 @@ function initMotionTracking() {
         height: 720,
         selfie: true,
     });
+
     camera.start();
+
+    new ControlPanel(controlsElement, {}).add([fpsControl]).on((options) => {
+        holistic.setOptions(options);
+    });
 }
 
 function getRandomLocation() {
@@ -215,6 +212,12 @@ function getRandomLocation() {
         type: "GET",
         success: function (res) {
             realCoords = { lat: res.lat, lng: res.lng };
+            let country = res.country;
+            hints.add({ capital: country.capital });
+            hints.add({ calling_code: country.calling_code });
+            hints.add({ currency_symbol: country.currency_symbol });
+            hints.add({ population: country.population });
+            getWeather(realCoords.lat, realCoords.lng);
         },
         async: false,
     });
@@ -239,6 +242,8 @@ function initPano() {
             linksControl: false,
             panControl: false,
             draggable: false,
+            fullscreenControl: false,
+            zoomControl: false,
         }
     );
     panorama.addListener("pano_changed", () => {
@@ -295,13 +300,390 @@ function initMap() {
     });
 }
 
+function getHint() {
+    $("#hint-row").addClass("hint-overlay");
+    $("#btn-hint").prop("disabled", true);
+    if (hints.size > 0) {
+        let items = Array.from(hints);
+        console.log(items);
+        const randomElement = items[Math.floor(Math.random() * items.length)];
+        let hintMessage = "";
+        let saveHint = true;
+        switch (Object.keys(randomElement)[0]) {
+            case "capital":
+                hintMessage = `Capital of this country is ${randomElement.capital}.`;
+                break;
+            case "calling_code":
+                hintMessage = `The calling code of this country is +${randomElement.calling_code}.`;
+                break;
+            case "currency_symbol":
+                hintMessage = `${randomElement.currency_symbol} is the currency symbol here.`;
+                break;
+            case "population":
+                var populationDots = randomElement.population
+                    .toString()
+                    .replace(/(\d)(?=(\d\d\d)+(?!\d))/g, "$1.");
+                hintMessage = `There are ${populationDots} people in this country.`;
+                break;
+            case "temperature":
+                hintMessage = `Current temperature here is ${
+                    randomElement.temperature.toString().split(".")[0]
+                } °C`;
+                break;
+            case "weather":
+                saveHint = false;
+                hintMessage = `This is the current weather here.`;
+                showWeather(randomElement.weather);
+                break;
+            case "timezone":
+                let zoneHours = randomElement.timezone / 3600; // seconds to hours
+                var currentTime = new Date();
+                var milliseconds = new Date(
+                    currentTime.setHours(currentTime.getUTCHours() + zoneHours)
+                );
+                let timeFormated = milliseconds.toTimeString().substring(0, 5);
+                hintMessage = `Local time here is ${timeFormated}.`;
+                break;
+        }
+
+        $("#hint").removeClass("animate__backOutLeft");
+        $("#hint").text(hintMessage);
+        $("#hint").addClass("animate__backInLeft");
+        setTimeout(function () {
+            $("#hint")
+                .removeClass("animate__backInleft")
+                .addClass("animate__backOutLeft");
+            $("#btn-hint").prop("disabled", false);
+            $("#hint-row").removeClass("hint-overlay");
+
+            if (saveHint) {
+                const newDiv = document.createElement("li");
+                $(newDiv).addClass("list-group-item");
+                $(newDiv).text(hintMessage);
+                $("#hint-list").append(newDiv);
+            }
+        }, 4000);
+        usedHints.push(randomElement);
+        items.splice(items.indexOf(randomElement), 1);
+        hints = new Set(items);
+    } else {
+        $("#no-hints").removeClass("animate__backOutLeft");
+        $("#no-hints").text("You have used all available hints :(");
+        $("#no-hints").addClass("animate__backInLeft");
+        setTimeout(function () {
+            $("#no-hints")
+                .removeClass("animate__backInleft")
+                .addClass("animate__backOutLeft");
+            $("#btn-hint").prop("disabled", false);
+            $("#hint-row").removeClass("hint-overlay");
+        }, 4000);
+    }
+}
+function showWeather(condition) {
+    switch (condition) {
+        case "Thunderstorm":
+            animateThunder();
+            break;
+        case "Drizzle":
+            animateRain();
+            break;
+        case "Rain":
+            animateRain();
+            break;
+        case "Snow":
+            animateSnow();
+            break;
+        case "Atmosphere":
+            animateFog();
+            break;
+        case "Clear":
+            animateSun();
+            break;
+        case "Clouds":
+            animateCloud();
+            break;
+
+        default:
+            break;
+    }
+}
+function animateRain() {
+    stopAnimation = false;
+    new p5(rainAnimation, "p5sketch");
+    setTimeout(function () {
+        stopAnimation = true;
+    }, 4000);
+}
+function animateSun() {
+    stopAnimation = false;
+    new p5(sunAnimation, "p5sketch");
+    setTimeout(function () {
+        stopAnimation = true;
+    }, 4000);
+}
+function animateSnow() {
+    stopAnimation = false;
+    new p5(snowAnimation, "p5sketch");
+    setTimeout(function () {
+        stopAnimation = true;
+    }, 4000);
+}
+function animateCloud() {
+    new p5(cloudsAnimation, "p5sketch");
+}
+function animateFog() {
+    stopAnimation = false;
+    new p5(fogAnimation, "p5sketch");
+    setTimeout(function () {
+        stopAnimation = true;
+    }, 4000);
+}
+function animateThunder() {
+    stopAnimation = false;
+    new p5(thunderAnimation, "p5sketch");
+    setTimeout(function () {
+        stopAnimation = true;
+    }, 4000);
+}
+
+var rainAnimation = function (sketch) {
+    let raindrops = [];
+    weatherSketch = sketch;
+    sketch.setup = function () {
+        let canvas1 = sketch.createCanvas(
+            windowWidth,
+            windowHeight,
+            sketch.P2D
+        );
+        canvas1.position(0, 0);
+        for (i = 0; i < 100; i++) {
+            raindrops[i] = new Rain(sketch);
+        }
+    };
+    sketch.draw = function () {
+        sketch.clear();
+        for (i = 0; i < raindrops.length; i++) {
+            if (raindrops[i].opacity < 0 && stopAnimation) {
+                raindrops.splice(i, 1);
+            } else {
+                if (raindrops[i].opacity < 0) {
+                    raindrops[i].y = random(0, -100);
+                    raindrops[i].length = 15;
+                    raindrops[i].r = 0;
+                    raindrops[i].opacity = 200;
+                }
+                raindrops[i].dropRain();
+                raindrops[i].splash();
+            }
+        }
+        if (raindrops.length <= 0) {
+            sketch.remove();
+        }
+    };
+    sketch.windowResized = function () {
+        resizeCanvas(windowWidth, windowHeight);
+    };
+};
+
+var snowAnimation = function (sketch) {
+    let snow;
+    let snows = [];
+    let snowNum = 500;
+    weatherSketch = sketch;
+    sketch.setup = function () {
+        let canvas1 = sketch.createCanvas(
+            windowWidth,
+            windowHeight,
+            sketch.P2D
+        );
+        canvas1.position(0, 0);
+        snow = new Snow(sketch);
+        for (let i = 0; i < snowNum; i++) {
+            let snow = new Snow(sketch);
+            snows.push(snow);
+        }
+    };
+    sketch.draw = function () {
+        sketch.clear();
+        snow.display();
+        snow.descend();
+        snow.update();
+        for (let i = 0; i < snows.length; i++) {
+            if (snows[i].y > windowHeight && stopAnimation) {
+                snows.splice(i, 1);
+            } else {
+                if (snows[i].y > windowHeight) {
+                    snows[i].y = 0;
+                }
+                snows[i].display(0, 0);
+                snows[i].update();
+            }
+        }
+        if (snows.length <= 0) {
+            sketch.remove();
+        }
+    };
+    sketch.windowResized = function () {
+        resizeCanvas(windowWidth, windowHeight);
+    };
+};
+
+var cloudsAnimation = function (sketch) {
+    let clouds = [];
+    let cloudsNum = 50;
+    weatherSketch = sketch;
+    sketch.setup = function () {
+        let canvas1 = sketch.createCanvas(
+            windowWidth,
+            windowHeight,
+            sketch.P2D
+        );
+        canvas1.position(0, 0);
+        for (let i = 0; i < cloudsNum; i++) {
+            let cloud = new Cloud(sketch);
+            clouds.push(cloud);
+        }
+    };
+    sketch.draw = function () {
+        sketch.clear();
+        for (var i = 0; i < clouds.length; i++) {
+            if (clouds[i].x > windowWidth) {
+                clouds.splice(i, 1);
+            } else {
+                clouds[i].move();
+                clouds[i].display();
+            }
+        }
+        if (clouds.length <= 0) {
+            sketch.remove();
+        }
+    };
+    sketch.windowResized = function () {
+        resizeCanvas(windowWidth, windowHeight);
+    };
+};
+
+var sunAnimation = function (sketch) {
+    let sun;
+    weatherSketch = sketch;
+    sketch.setup = function () {
+        let canvas1 = sketch.createCanvas(
+            windowWidth,
+            windowHeight,
+            sketch.P2D
+        );
+        canvas1.position(0, 0);
+        sun = new Sun(sketch);
+    };
+    sketch.draw = function () {
+        sketch.clear();
+        if (!stopAnimation) {
+            sun.shine();
+        } else {
+            sketch.remove();
+        }
+    };
+    sketch.windowResized = function () {
+        resizeCanvas(windowWidth, windowHeight);
+    };
+};
+
+var thunderAnimation = function (sketch) {
+    var xCoord1 = 0;
+    var yCoord1 = 0;
+    var xCoord2 = 0;
+    var yCoord2 = 0;
+    weatherSketch = sketch;
+    sketch.setup = function () {
+        let canvas1 = sketch.createCanvas(
+            windowWidth,
+            windowHeight,
+            sketch.P2D
+        );
+        canvas1.position(0, 0);
+        xCoord2 = random(windowWidth * 0.1, windowWidth - windowWidth * 0.1);
+        yCoord2 = 0;
+    };
+    sketch.draw = function () {
+        if (stopAnimation) {
+            sketch.remove();
+        } else {
+            if (random(0.0, 1.0) < 0.1) {
+                for (var i = 0; i < 20; i++) {
+                    xCoord1 = xCoord2;
+                    yCoord1 = yCoord2;
+                    xCoord2 = xCoord1 + int(random(-20, 20));
+                    yCoord2 = yCoord1 + int(random(0, 20));
+                    sketch.strokeWeight(random(1, 3));
+                    sketch.strokeJoin(MITER);
+                    sketch.line(xCoord1, yCoord1, xCoord2, yCoord2);
+
+                    if (
+                        (xCoord2 > windowWidth) |
+                        (xCoord2 < 0) |
+                        (yCoord2 > windowHeight) |
+                        (yCoord2 < 0)
+                    ) {
+                        sketch.clear();
+                        xCoord2 = int(random(0, windowWidth));
+                        yCoord2 = 0;
+                        sketch.stroke(255, 255, random(0, 255));
+                    }
+                }
+            }
+        }
+    };
+    sketch.windowResized = function () {
+        resizeCanvas(windowWidth, windowHeight);
+    };
+};
+
+var fogAnimation = function (sketch) {
+    let fogs = [];
+    let fogsNum = 50;
+    weatherSketch = sketch;
+    sketch.setup = function () {
+        let canvas1 = sketch.createCanvas(
+            windowWidth,
+            windowHeight,
+            sketch.P2D
+        );
+        canvas1.position(0, 0);
+        for (let i = 0; i < fogsNum; i++) {
+            let fog = new Fog(sketch);
+            fogs.push(fog);
+        }
+    };
+    sketch.draw = function () {
+        sketch.clear();
+        for (var i = 0; i < fogs.length; i++) {
+            if (fogs[i].y1 > windowWidth) {
+                fogs.splice(i, 1);
+            } else {
+                fogs[i].paint();
+                fogs[i].update();
+            }
+        }
+        if (fogs.length <= 0) {
+            sketch.remove();
+        }
+    };
+    sketch.windowResized = function () {
+        resizeCanvas(windowWidth, windowHeight);
+    };
+};
+
 function initButtons() {
     $("#btn-settings").click(function () {
         $("#settings-modal").modal("toggle");
     });
 
     $("#btn-hint").click(function () {
-        console.log("Hint");
+        getHint();
+    });
+
+    $("#btn-restart").click(function () {
+        restartGame();
     });
 
     $("#cameraSwitch").change(function () {
@@ -490,10 +872,6 @@ function initSelections() {
     });
 }
 
-function getRegions(id) {}
-function getSubregions() {}
-function getCountries() {}
-
 function trackPose() {
     if (!selectedLocation && face && face.noseFace) {
         let currentNoseX = face.noseFace.x;
@@ -646,12 +1024,14 @@ function kFormatter(num) {
 }
 
 function restartGame() {
+    hints = new Set();
+    $("#hint-list").empty();
+    initialNosePosition = {};
+    selectedLocation = false;
     $("#myModal").modal("hide");
     removeMapNotations();
     getRandomLocation();
     panorama.setPosition(realCoords);
-    initialNosePosition = {};
-    selectedLocation = false;
 }
 
 function checkZoomPose() {
@@ -714,7 +1094,6 @@ function funFact() {
 
             const randomElement =
                 facts[Math.floor(Math.random() * facts.length)];
-            console.log(Object.keys(randomElement));
             switch (Object.keys(randomElement)[0]) {
                 case "capital":
                     $("#funFact").text(
@@ -741,6 +1120,23 @@ function funFact() {
                     break;
             }
             $("#funFact").addClass("animate__backInLeft");
+        },
+        async: false,
+    });
+}
+
+function getWeather(lat, lng) {
+    let url = `http://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&units=metric&appid=9de243494c0b295cca9337e1e96b00e2`;
+    $.ajax({
+        url: url,
+        type: "GET",
+        success: function (res) {
+            console.log(res);
+            try {
+                hints.add({ weather: res.weather[0].main });
+                hints.add({ temperature: res.main.temp });
+                hints.add({ timezone: res.timezone });
+            } catch (e) {}
         },
         async: false,
     });

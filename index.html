@@ -15,9 +15,9 @@
             crossorigin="anonymous"
         />
         <link
-        rel="stylesheet"
-        href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
-      />
+            rel="stylesheet"
+            href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+        />
         <script
             src="https://kit.fontawesome.com/4f9c54d899.js"
             crossorigin="anonymous"
@@ -44,6 +44,12 @@
         <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBtCaCEBSsaWkmsIBhxgp5rb1n6lo7T6ac&libraries=&v=weekly"></script>
         <link rel="stylesheet" href="./styles.css" />
         <script src="sketch.js"></script>
+        <script src="weatherconditions/Cloud.js"></script>
+        <script src="weatherconditions/Fog.js"></script>
+        <script src="weatherconditions/Rain.js"></script>
+        <script src="weatherconditions/Snow.js"></script>
+        <script src="weatherconditions/Sun.js"></script>
+        <script src="weatherconditions/Thunder.js"></script>
     </head>
 
     <body>
@@ -54,10 +60,23 @@
                 </div>
             </div>
         </div>
+        <div class="container-fluid w-100 h-100 p-0 hints">
+            <div id="p5sketch"></div>
+            <div id="hint-row" class="row h-100 align-items-center">
+                <div class="col"></div>
+                <div class="col text-center">
+                    <h4 id="hint" class="text-white animate__animated"></h4>
+                    <h4 id="no-hints" class="text-white animate__animated"></h4>
+                </div>
+                <div class="col"></div>
+            </div>
+        </div>
         <div class="container-fluid w-100 h-100 canvas-map">
             <div class="row h-100 align-items-end">
-                <div class="col"></div>
-                <div class="col">
+                <div class="col p-2">
+                    <ul id="hint-list" class="list-group"></ul>
+                </div>
+                <div class="col text-center">
                     <canvas
                         id="p5canvas"
                         width="400"
@@ -67,7 +86,7 @@
                     ></canvas>
                     <video class="input_video selfie" hidden></video>
                 </div>
-                <div class="col" style="height: 200px">
+                <div class="col p-2" style="height: 200px">
                     <div id="map"></div>
                 </div>
             </div>
@@ -105,7 +124,7 @@
             <div class="row">
                 <div class="col p-2 icons">
                     <button
-                        id="btn-hint"
+                        id="btn-restart"
                         type="button"
                         class="btn btn-info btn-lg"
                         data-toggle="tooltip"
@@ -149,8 +168,6 @@
                     <div class="spinner-grow text-info m-1 " role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-
-                    
                 </div>
                 <div class="col"></div>
             </div>
@@ -247,6 +264,7 @@
                                         </option>
                                     </select>
                                 </div>
+                                <div class="control-panel"></div>
                             </div>
                         </div>
                     </div>

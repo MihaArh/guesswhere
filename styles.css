@@ -71,3 +71,20 @@ body {
   top: 0;
   z-index: 100;
 }
+
+.hints {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+}
+
+.p5sketch canvas {
+  display: block;
+  position: absolute; 
+  left: 0;
+  top: 0;
+}
+
+.hint-overlay {
+  background-color: rgba(0,0,0,0.5);
+}
