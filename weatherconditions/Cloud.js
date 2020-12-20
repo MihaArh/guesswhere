@@ -1,7 +1,7 @@
 class Cloud {
     constructor(sketch) {
         this.x = random(windowWidth);
-        this.y = random(windowHeight);
+        this.y = random(windowHeight * 0.2);
         this.size = random(0.8, 3);
         this.opacity = random(63, 255);
         this.sketch = sketch;
