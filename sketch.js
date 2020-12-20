@@ -1176,7 +1176,7 @@ function funFact() {
 }
 
 function getWeather(lat, lng) {
-    let url = `http://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&units=metric&appid=9de243494c0b295cca9337e1e96b00e2`;
+    let url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lng}&units=metric&appid=9de243494c0b295cca9337e1e96b00e2`;
     $.ajax({
         url: url,
         type: "GET",
