@@ -202,9 +202,9 @@ function initMotionTracking() {
 }
 
 function getRandomLocation() {
-    let region = selectedRegion.replace(" ","%20");
-    let subregion = selectedSubregion.replace(" ","%20");
-    let country = selectedCountry.replace(" ","%20");
+    let region = selectedRegion.replace(" ", "%20");
+    let subregion = selectedSubregion.replace(" ", "%20");
+    let country = selectedCountry.replace(" ", "%20");
     let url = `https://halibun.pythonanywhere.com/api/random/?region=${region}&subregion=${subregion}&country=${country}&format=json`;
     $.ajax({
         url: url,
@@ -725,12 +725,9 @@ function initButtons() {
 }
 
 function initSelections() {
-    let regionsApiUrl =
-        baseApiUrl + "/regions/?ordering=region&sort=DESC";
-    let subregionsApiUrl =
-        baseApiUrl + "/subregions/?ordering=subregion&sort=DESC";
-    let countriesApiUrl =
-        baseApiUrl + "/countries/?ordering=country&sort=DESC";
+    let regionsApiUrl = `${baseApiUrl}/regions/?ordering=region&sort=DESC`;
+    let subregionsApiUrl =`${baseApiUrl}/subregions/?ordering=subregion&sort=DESC`;
+    let countriesApiUrl = `${baseApiUrl}/countries/?ordering=country&sort=DESC`;
 
     $.ajax({
         url: regionsApiUrl,
