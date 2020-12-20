@@ -42,11 +42,11 @@ function setup() {
     canvasElement = document.getElementById("p5canvas");
     controlsElement = document.getElementsByClassName("control-panel")[0];
     canvasCtx = canvasElement.getContext("2d");
-    // initMotionTracking();
+    initMotionTracking();
     // TODO remove
-    $("#funFact").removeClass("animate__backInLeft");
-    $("#funFact").addClass("animate__backOutLeft");
-    $(".loading").fadeOut("2000");
+    // $("#funFact").removeClass("animate__backInLeft");
+    // $("#funFact").addClass("animate__backOutLeft");
+    // $(".loading").fadeOut("2000");
     funFact();
     getRandomLocation();
 
@@ -268,7 +268,7 @@ function initPano() {
 
 function initMap() {
     map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: 45, lng:  0 },
+        center: { lat: 45, lng: 0 },
         minZoom: 2,
         zoom: 2,
         maxZoom: 15,
@@ -311,7 +311,10 @@ function getHint() {
                 let charsToRemove = Math.floor(capital.length / 2);
                 let capitalArray = capital.split("");
 
-                hintMessage = `Capital of this country is ${getRandomUnderscores(capitalArray, charsToRemove)}.`;
+                hintMessage = `Capital of this country is ${getRandomUnderscores(
+                    capitalArray,
+                    charsToRemove
+                )}.`;
                 break;
             case "calling_code":
                 hintMessage = `The calling code of this country is +${randomElement.calling_code}.`;
@@ -1047,8 +1050,8 @@ function restartGame() {
 }
 
 function checkZoomPose() {
-    if (face && leftHand && rightHand) {
-        let treshold = 0.07;
+    if (leftHand && rightHand) {
+        let treshold = 0.3;
 
         let distHandLeft = dist(
             leftHand.index.x,
@@ -1063,24 +1066,7 @@ function checkZoomPose() {
             rightHand.thumb.y
         );
 
-        let rightThumbToNose = dist(
-            rightHand.thumb.x,
-            rightHand.thumb.y,
-            face.rightEye.x,
-            face.rightEye.y
-        );
-        let leftThumbToNose = dist(
-            leftHand.thumb.x,
-            leftHand.thumb.y,
-            face.leftEye.x,
-            face.leftEye.y
-        );
-        if (
-            distHandLeft < treshold &&
-            distHandRight < treshold &&
-            rightThumbToNose < treshold &&
-            leftThumbToNose < treshold
-        ) {
+        if (distHandLeft > treshold && distHandRight > treshold) {
             panorama.setZoom(3);
         } else {
             panorama.setZoom(1);
