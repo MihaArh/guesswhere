@@ -32,6 +32,8 @@ let face = {};
 
 let stopAnimation = false;
 let weatherSketch = null;
+
+let baseApiUrl = "https://halibun.pythonanywhere.com/api";
 const fpsControl = new FPS();
 
 function setup() {
@@ -200,13 +202,10 @@ function initMotionTracking() {
 }
 
 function getRandomLocation() {
-    let url = `https://halibun.pythonanywhere.com/api/random/?region=${selectedRegion.replace(
-        " ",
-        "%20"
-    )}&subregion=${selectedSubregion.replace(
-        " ",
-        "%20"
-    )}&country=${selectedCountry.replace(" ", "%20")}&format=json`;
+    let region = selectedRegion.replace(" ","%20");
+    let subregion = selectedSubregion.replace(" ","%20");
+    let country = selectedCountry.replace(" ","%20");
+    let url = `https://halibun.pythonanywhere.com/api/random/?region=${region}&subregion=${subregion}&country=${country}&format=json`;
     $.ajax({
         url: url,
         type: "GET",
@@ -258,8 +257,6 @@ function initPano() {
             lat: panorama.location.latLng.lat(),
             lng: panorama.location.latLng.lng(),
         };
-        // console.log(panorama.location.latLng.lat());
-        // console.log(panorama.location.latLng.lng());
     });
     panorama.addListener("pov_changed", () => {
         //DOL
@@ -326,9 +323,11 @@ function getHint() {
                 hintMessage = `There are ${populationDots} people in this country.`;
                 break;
             case "temperature":
-                hintMessage = `Current temperature here is ${
-                    randomElement.temperature.toString().split(".")[0]
-                } °C`;
+                let temperature = randomElement.temperature
+                    .toString()
+                    .split(".")[0];
+                if (temperature == "-0") temperature = "0";
+                hintMessage = `Current temperature here is ${temperature} °C.`;
                 break;
             case "weather":
                 saveHint = false;
@@ -727,11 +726,11 @@ function initButtons() {
 
 function initSelections() {
     let regionsApiUrl =
-        "https://halibun.pythonanywhere.com/api/regions/?ordering=region&sort=DESC";
+        baseApiUrl + "/regions/?ordering=region&sort=DESC";
     let subregionsApiUrl =
-        "https://halibun.pythonanywhere.com/api/subregions/?ordering=subregion&sort=DESC";
+        baseApiUrl + "/subregions/?ordering=subregion&sort=DESC";
     let countriesApiUrl =
-        "https://halibun.pythonanywhere.com/api/countries/?ordering=country&sort=DESC";
+        baseApiUrl + "/countries/?ordering=country&sort=DESC";
 
     $.ajax({
         url: regionsApiUrl,
@@ -1080,7 +1079,7 @@ function checkZoomPose() {
 }
 
 function funFact() {
-    let url = `https://halibun.pythonanywhere.com/api/random/`;
+    let url = `${baseApiUrl}/random/`;
     $.ajax({
         url: url,
         type: "GET",
