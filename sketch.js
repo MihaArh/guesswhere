@@ -42,11 +42,11 @@ function setup() {
     canvasElement = document.getElementById("p5canvas");
     controlsElement = document.getElementsByClassName("control-panel")[0];
     canvasCtx = canvasElement.getContext("2d");
-    initMotionTracking();
+    // initMotionTracking();
     // TODO remove
-    // $("#funFact").removeClass("animate__backInLeft");
-    // $("#funFact").addClass("animate__backOutLeft");
-    // $(".loading").fadeOut("2000");
+    $("#funFact").removeClass("animate__backInLeft");
+    $("#funFact").addClass("animate__backOutLeft");
+    $(".loading").fadeOut("2000");
     funFact();
     getRandomLocation();
 
@@ -268,7 +268,7 @@ function initPano() {
 
 function initMap() {
     map = new google.maps.Map(document.getElementById("map"), {
-        center: { lat: -34.397, lng: 150.644 },
+        center: { lat: 45, lng:  0 },
         minZoom: 2,
         zoom: 2,
         maxZoom: 15,
@@ -410,12 +410,6 @@ function showWeather(condition) {
         case "Snow":
             animateSnow();
             break;
-        case "Atmosphere":
-            animateFog();
-            break;
-        case "Mist":
-            animateFog();
-            break;
         case "Clear":
             animateSun();
             break;
@@ -423,6 +417,7 @@ function showWeather(condition) {
             animateCloud();
             break;
         default:
+            animateFog();
             break;
     }
 }
@@ -1042,6 +1037,7 @@ function kFormatter(num) {
 function restartGame() {
     hints = new Set();
     $("#hint-list").empty();
+    if (weatherSketch) weatherSketch.remove();
     initialNosePosition = {};
     selectedLocation = false;
     $("#myModal").modal("hide");
