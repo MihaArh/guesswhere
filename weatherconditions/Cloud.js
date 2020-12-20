@@ -5,6 +5,7 @@ class Cloud {
         this.size = random(0.8, 3);
         this.opacity = random(63, 255);
         this.sketch = sketch;
+        this.speed = random(5, 9);
     }
 
     display() {
@@ -44,7 +45,7 @@ class Cloud {
         );
     }
     move() {
-        this.x = this.x += 1;
+        this.x += this.speed;
         this.y = this.y;
     }
 }
