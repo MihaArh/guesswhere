@@ -703,25 +703,39 @@ function initButtons() {
         restartGame();
     });
 
+    $("#cameraSwitch").prop('checked', showCamera);
+    $("#cameraLabelsSwitch").prop('checked', showCameraLabels);
+
     $("#cameraSwitch").change(function () {
         if (this.checked) {
+            $("#cameraLabelsSwitch").prop("disabled", false);
+        } else {
+            $("#cameraLabelsSwitch").prop("disabled", true);
+        }
+    });
+
+    // $("#cameraLabelsSwitch").change(function () {
+    //     showCameraLabels = this.checked;
+    // });
+
+    $("#saveSettings").click(function () {
+        showCamera = $("#cameraSwitch").prop('checked');
+
+        if (showCamera) {
             $("#p5canvas").show("slow");
             $("#cameraLabelsSwitch").prop("disabled", false);
         } else {
             $("#p5canvas").hide("slow");
             $("#cameraLabelsSwitch").prop("disabled", true);
         }
-        showCamera = this.checked;
-    });
 
-    $("#cameraLabelsSwitch").change(function () {
-        showCameraLabels = this.checked;
-    });
+        showCameraLabels = $("#cameraLabelsSwitch").prop('checked');
 
-    $("#saveSettings").click(function () {
-        console.log("Ha");
-        showCamera = $("#cameraSwitch").checked;
-        showCameraLabels = true;
+        console.log(showCamera, showCameraLabels);
+        
+        let prevRegion = selectedRegion;
+        let prevSubregion = selectedSubregion;
+        let prevCountry = selectedCountry;
 
         selectedRegion =
             $("#regionsSelect option:selected").val() == 0
@@ -735,9 +749,9 @@ function initButtons() {
             $("#countriesSelect option:selected").val() == 0
                 ? "all"
                 : $("#countriesSelect option:selected").text();
-        getRandomLocation();
-        restartGame();
-        console.log("Restart");
+        if (prevRegion != selectedRegion || prevSubregion != selectedSubregion || prevCountry != selectedCountry){
+            restartGame();
+        }
     });
 }
 
@@ -1047,6 +1061,7 @@ function restartGame() {
     removeMapNotations();
     getRandomLocation();
     panorama.setPosition(realCoords);
+    map.setZoom(2);
 }
 
 function checkZoomPose() {
