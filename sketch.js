@@ -382,6 +382,7 @@ function getHint() {
 function showWeather(condition) {
     switch (condition) {
         case "Thunderstorm":
+            animateRain();
             animateThunder();
             break;
         case "Drizzle":
@@ -530,7 +531,7 @@ var snowAnimation = function (sketch) {
 
 var cloudsAnimation = function (sketch) {
     let clouds = [];
-    let cloudsNum = 50;
+    let cloudsNum = 10;
     weatherSketch = sketch;
     sketch.setup = function () {
         let canvas1 = sketch.createCanvas(
