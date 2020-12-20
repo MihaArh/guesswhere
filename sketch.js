@@ -302,13 +302,16 @@ function getHint() {
     $("#btn-hint").prop("disabled", true);
     if (hints.size > 0) {
         let items = Array.from(hints);
-        console.log(items);
         const randomElement = items[Math.floor(Math.random() * items.length)];
         let hintMessage = "";
         let saveHint = true;
         switch (Object.keys(randomElement)[0]) {
             case "capital":
-                hintMessage = `Capital of this country is ${randomElement.capital}.`;
+                let capital = randomElement.capital;
+                let charsToRemove = Math.floor(capital.length / 2);
+                let capitalArray = capital.split("");
+
+                hintMessage = `Capital of this country is ${getRandomUnderscores(capitalArray, charsToRemove)}.`;
                 break;
             case "calling_code":
                 hintMessage = `The calling code of this country is +${randomElement.calling_code}.`;
@@ -378,6 +381,20 @@ function getHint() {
         }, 4000);
     }
 }
+
+function getRandomUnderscores(splitted, n) {
+    var count = 0; // variable where i keep trace of how many _ i have inserted
+    while (count < n) {
+        var index = Math.floor(Math.random() * splitted.length); //generate new index
+        if (splitted[index] !== "_" && splitted[index] !== " ") {
+            splitted[index] = "_";
+            count++;
+        }
+    }
+
+    return splitted.join(""); //the new string with spaces replaced
+}
+
 function showWeather(condition) {
     switch (condition) {
         case "Thunderstorm":
@@ -396,13 +413,15 @@ function showWeather(condition) {
         case "Atmosphere":
             animateFog();
             break;
+        case "Mist":
+            animateFog();
+            break;
         case "Clear":
             animateSun();
             break;
         case "Clouds":
             animateCloud();
             break;
-
         default:
             break;
     }
@@ -726,7 +745,7 @@ function initButtons() {
 
 function initSelections() {
     let regionsApiUrl = `${baseApiUrl}/regions/?ordering=region&sort=DESC`;
-    let subregionsApiUrl =`${baseApiUrl}/subregions/?ordering=subregion&sort=DESC`;
+    let subregionsApiUrl = `${baseApiUrl}/subregions/?ordering=subregion&sort=DESC`;
     let countriesApiUrl = `${baseApiUrl}/countries/?ordering=country&sort=DESC`;
 
     $.ajax({
