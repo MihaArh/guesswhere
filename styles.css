@@ -88,3 +88,13 @@ body {
 .hint-overlay {
   background-color: rgba(0,0,0,0.5);
 }
+
+.map-div{
+  height: 30%;
+  transition: height 1s;
+}
+
+.map-div:hover{
+  height: 50%;
+  
+}
