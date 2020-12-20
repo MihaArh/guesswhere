@@ -1,100 +1,100 @@
 html,
 body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
+    height: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 #cnt {
-  display: inline-block;
-  width: 100%;
-  height: 100%;
-  margin: 0;
-  background: black;
-  position: relative;
-  text-align: center;
+    display: inline-block;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    background: black;
+    position: relative;
+    text-align: center;
 }
 
 #map {
-  height: 100%;
-  width: 100%;
-  bottom:0;
+    height: 100%;
+    width: 100%;
+    bottom: 0;
 }
 
 #pano {
-  height: 100%;
-  width: 100%;
-  position: absolute;
-  z-index: 1;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    z-index: 1;
 }
 
 #p5canvas {
-  background-color: #fff;
-  bottom: 0;
-  z-index: 5;
+    background-color: #fff;
+    bottom: 0;
+    z-index: 5;
 }
-
 
 .selfie {
-  transform: scale(-1, 1);
+    transform: scale(-1, 1);
 }
 
-.canvas-map{
-  position: absolute;
-  z-index: 10;
-  top: 0;
+.canvas-map {
+    position: absolute;
+    z-index: 10;
+    top: 0;
 }
-
-
 
 .row {
-  margin-right: 0;
+    margin-right: 0;
 }
 .settings {
-  position: absolute;
-  z-index: 15;
-  top: 0;
+    position: absolute;
+    z-index: 15;
+    top: 0;
 }
 
-.settings button{
-  width: 60px;
-  height: 60px;
+.settings button {
+    width: 60px;
+    height: 60px;
 }
 
-.icons{
-  text-align: end;
+.icons {
+    text-align: end;
 }
 
-.loading{
-  background-color: black;
-  position: absolute;
-  top: 0;
-  z-index: 100;
+.loading {
+    background-color: black;
+    position: absolute;
+    top: 0;
+    z-index: 100;
 }
 
 .hints {
-  position: absolute;
-  z-index: 3;
-  top: 0;
+    position: absolute;
+    z-index: 3;
+    top: 0;
 }
 
 .p5sketch canvas {
-  display: block;
-  position: absolute; 
-  left: 0;
-  top: 0;
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
 }
 
 .hint-overlay {
-  background-color: rgba(0,0,0,0.5);
+    background-color: rgba(0, 0, 0, 0.5);
 }
 
-.map-div{
-  height: 30%;
-  transition: height 1s;
+.map-div {
+    height: 30%;
+    transition: height 1s;
 }
 
-.map-div:hover{
-  height: 50%;
-  
+.map-div:hover {
+    height: 50%;
+}
+
+#score-map {
+    height: 30%;
 }

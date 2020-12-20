@@ -1,10 +1,12 @@
 let realCoords = { lat: 46.053274, lng: 14.470221 };
 let panorama;
 let map;
+let scoreMap;
 let initialNosePosition = {};
 let lastNosePosition = {};
 let initialNoseLandmarks = {};
 let line;
+let lineScoreMap;
 let selectedLocation = false;
 let destinationMarker;
 let clickedMarker;
@@ -13,26 +15,24 @@ let canvasElement;
 let controlsElement;
 let canvasCtx;
 let cameraLoaded = false;
-
+let locationData = null;
+let weatherData = null;
 let showCamera = true;
-let showCameraLabels = true;
+let showCameraLabels = false;
 
 let selectedRegion = "all";
 let selectedSubregion = "all";
 let selectedCountry = "all";
-
 let isLoaded = false;
-
 let hints = new Set();
 let usedHints = [];
-
 let leftHand = {};
 let rightHand = {};
 let face = {};
-
 let stopAnimation = false;
 let weatherSketch = null;
-
+let maxScoreWorld = 20000;
+let maxScore = 20000;
 let baseApiUrl = "https://halibun.pythonanywhere.com/api";
 const fpsControl = new FPS();
 
@@ -43,13 +43,8 @@ function setup() {
     controlsElement = document.getElementsByClassName("control-panel")[0];
     canvasCtx = canvasElement.getContext("2d");
     initMotionTracking();
-    // TODO remove
-    // $("#funFact").removeClass("animate__backInLeft");
-    // $("#funFact").addClass("animate__backOutLeft");
-    // $(".loading").fadeOut("2000");
     funFact();
     getRandomLocation();
-
     initPano();
     initMap();
     initButtons();
@@ -126,31 +121,16 @@ function initMotionTracking() {
             face["noseFace"] = results.faceLandmarks[1];
         }
         if (showCameraLabels) {
-            // Hands...
-            // drawConnectors(
-            //     canvasCtx,
-            //     results.rightHandLandmarks,
-            //     HAND_CONNECTIONS,
-            //     { color: "#00CC00" }
-            // );
             drawLandmarks(canvasCtx, results.rightHandLandmarks, {
                 color: "#00ff91",
                 fillColor: "#0099ff",
             });
-            // drawConnectors(
-            //     canvasCtx,
-            //     results.leftHandLandmarks,
-            //     HAND_CONNECTIONS,
-            //     {
-            //         color: "#CC0000",
-            //     }
-            // );
+
             drawLandmarks(canvasCtx, results.leftHandLandmarks, {
                 color: "#FF0000",
                 fillColor: "#00FF00",
             });
 
-            // Face...
             drawLandmarks(canvasCtx, results.faceLandmarks, {
                 color: "#C0C0C070",
                 fillColor: "#FF0000",
@@ -210,6 +190,7 @@ function getRandomLocation() {
         url: url,
         type: "GET",
         success: function (res) {
+            locationData = res;
             realCoords = { lat: res.lat, lng: res.lng };
             let country = res.country;
             hints.add({ capital: country.capital });
@@ -279,6 +260,7 @@ function initMap() {
 
     map.addListener("click", (mapsMouseEvent) => {
         if (!selectedLocation) {
+            initScoreMap();
             selectedLocation = true;
             let clickedCoords = mapsMouseEvent.latLng.toJSON();
             let dstn = getDistance(clickedCoords, realCoords);
@@ -287,12 +269,9 @@ function initMap() {
             var latlngbounds = new google.maps.LatLngBounds();
             latlngbounds.extend(clickedCoords);
             latlngbounds.extend(realCoords);
-            map.fitBounds(latlngbounds);
+            scoreMap.fitBounds(latlngbounds);
 
             showScore(dstn);
-            $("#restartGame").click(function () {
-                restartGame();
-            });
         }
     });
 }
@@ -386,16 +365,16 @@ function getHint() {
 }
 
 function getRandomUnderscores(splitted, n) {
-    var count = 0; // variable where i keep trace of how many _ i have inserted
+    var count = 0;
     while (count < n) {
-        var index = Math.floor(Math.random() * splitted.length); //generate new index
+        var index = Math.floor(Math.random() * splitted.length);
         if (splitted[index] !== "_" && splitted[index] !== " ") {
             splitted[index] = "_";
             count++;
         }
     }
 
-    return splitted.join(""); //the new string with spaces replaced
+    return splitted.join("");
 }
 
 function showWeather(condition) {
@@ -703,8 +682,8 @@ function initButtons() {
         restartGame();
     });
 
-    $("#cameraSwitch").prop('checked', showCamera);
-    $("#cameraLabelsSwitch").prop('checked', showCameraLabels);
+    $("#cameraSwitch").prop("checked", showCamera);
+    $("#cameraLabelsSwitch").prop("checked", showCameraLabels);
 
     $("#cameraSwitch").change(function () {
         if (this.checked) {
@@ -714,12 +693,8 @@ function initButtons() {
         }
     });
 
-    // $("#cameraLabelsSwitch").change(function () {
-    //     showCameraLabels = this.checked;
-    // });
-
     $("#saveSettings").click(function () {
-        showCamera = $("#cameraSwitch").prop('checked');
+        showCamera = $("#cameraSwitch").prop("checked");
 
         if (showCamera) {
             $("#p5canvas").show("slow");
@@ -729,10 +704,8 @@ function initButtons() {
             $("#cameraLabelsSwitch").prop("disabled", true);
         }
 
-        showCameraLabels = $("#cameraLabelsSwitch").prop('checked');
+        showCameraLabels = $("#cameraLabelsSwitch").prop("checked");
 
-        console.log(showCamera, showCameraLabels);
-        
         let prevRegion = selectedRegion;
         let prevSubregion = selectedSubregion;
         let prevCountry = selectedCountry;
@@ -749,7 +722,11 @@ function initButtons() {
             $("#countriesSelect option:selected").val() == 0
                 ? "all"
                 : $("#countriesSelect option:selected").text();
-        if (prevRegion != selectedRegion || prevSubregion != selectedSubregion || prevCountry != selectedCountry){
+        if (
+            prevRegion != selectedRegion ||
+            prevSubregion != selectedSubregion ||
+            prevCountry != selectedCountry
+        ) {
             restartGame();
         }
     });
@@ -953,7 +930,26 @@ function drawLines(clickedCoords, realCoords) {
     if (line !== undefined) {
         removeLine();
     }
+
+    if (lineScoreMap !== undefined) {
+        removeLine();
+    }
     line = new google.maps.Polyline({
+        path: [
+            new google.maps.LatLng(clickedCoords.lat, clickedCoords.lng),
+            new google.maps.LatLng(realCoords.lat, realCoords.lng),
+        ],
+        icons: [
+            {
+                icon: lineSymbol,
+                offset: "0",
+                repeat: "20px",
+            },
+        ],
+        strokeOpacity: 0,
+    });
+
+    lineScoreMap = new google.maps.Polyline({
         path: [
             new google.maps.LatLng(clickedCoords.lat, clickedCoords.lng),
             new google.maps.LatLng(realCoords.lat, realCoords.lng),
@@ -979,7 +975,7 @@ function drawMarkers(clickedCoords, realCoords) {
 
     destinationMarker = new google.maps.Marker({
         position: realCoords,
-        map: map,
+        map: scoreMap,
         draggable: false,
         icon: destinationIcon,
         zIndex: -20,
@@ -993,7 +989,7 @@ function drawMarkers(clickedCoords, realCoords) {
 
     clickedMarker = new google.maps.Marker({
         position: clickedCoords,
-        map: map,
+        map: scoreMap,
         draggable: false,
         icon: clickedIcon,
         zIndex: -20,
@@ -1001,12 +997,12 @@ function drawMarkers(clickedCoords, realCoords) {
 }
 
 function addLine() {
-    line.setMap(map);
+    lineScoreMap.setMap(scoreMap);
 }
 
 function removeLine() {
-    if (line) {
-        line.setMap(null);
+    if (lineScoreMap) {
+        lineScoreMap.setMap(null);
     }
 }
 
@@ -1025,7 +1021,7 @@ function rad(x) {
 }
 
 function getDistance(p1, p2) {
-    var R = 6378137; // Earth’s mean radius in meter
+    var R = 6378137;
     var dLat = rad(p2.lat - p1.lat);
     var dLong = rad(p2.lng - p1.lng);
     var a =
@@ -1036,16 +1032,56 @@ function getDistance(p1, p2) {
             Math.sin(dLong / 2);
     var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     var d = R * c;
-    return d; // returns the distance in meter
+    return d;
 }
 
 function showScore(distance) {
-    let score = kFormatter(Math.floor(distance));
-    $("#myModal #score").text(score);
-    $("#myModal").modal("show");
+    let distanceInKm = kmFormatter(Math.floor(distance));
+    let score = calculateScore(distance);
+
+    let locationName = `${weatherData.name}, ${locationData.country.country}`;
+
+    $("#score-modal #city").text(`${locationName}`);
+    $("#score-modal #distance").text(`${distanceInKm}`);
+    $("#score-modal #hints").text(
+        `${usedHints.length} ${usedHints.length == 1 ? " hint" : " hints"}`
+    );
+    $("#score-modal #score").text(score);
+
+    $("#restart-game").click(function () {
+        restartGame();
+    });
+
+    $("#score-modal").modal("show");
 }
 
-function kFormatter(num) {
+function calculateScore(distance) {
+    let score = maxScoreWorld - distance / 1000;
+    let hintsDeducation = 500 * usedHints.length;
+    score -= hintsDeducation;
+    score = Math.floor(score);
+    $("#score").text(`${score} / ${maxScoreWorld}`);
+    $("#score-progress-bar").attr("aria-valuemax", maxScoreWorld);
+    for (let i = 0; i < score; i++) {
+        $("#score-progress-bar")
+            .css("width", (i / maxScoreWorld) * 100 + "%")
+            .attr("aria-valuenow", i);
+    }
+}
+
+function initScoreMap() {
+    scoreMap = new google.maps.Map(document.getElementById("score-map"), {
+        center: { lat: 45, lng: 0 },
+        minZoom: 2,
+        zoom: 2,
+        maxZoom: 15,
+        draggableCursor: "crosshair",
+        scrollwheel: true,
+        streetViewControl: false,
+    });
+}
+
+function kmFormatter(num) {
     return Math.abs(num) > 999
         ? Math.sign(num) * (Math.abs(num) / 1000).toFixed(1) + " km"
         : Math.sign(num) * Math.abs(num) + " m";
@@ -1053,11 +1089,12 @@ function kFormatter(num) {
 
 function restartGame() {
     hints = new Set();
+    usedHints = [];
     $("#hint-list").empty();
     if (weatherSketch) weatherSketch.remove();
     initialNosePosition = {};
     selectedLocation = false;
-    $("#myModal").modal("hide");
+    $("#score-modal").modal("hide");
     removeMapNotations();
     getRandomLocation();
     panorama.setPosition(realCoords);
@@ -1144,8 +1181,8 @@ function getWeather(lat, lng) {
         url: url,
         type: "GET",
         success: function (res) {
-            console.log(res);
             try {
+                weatherData = res;
                 hints.add({ weather: res.weather[0].main });
                 hints.add({ temperature: res.main.temp });
                 hints.add({ timezone: res.timezone });
