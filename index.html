@@ -230,6 +230,25 @@
                                 </div>
                             </div>
                             <div class="row p-2">
+                                <div class="col-3">
+                                    <div class="form-check form-switch">
+                                        <label
+                                            for="cameraRotationSpeed"
+                                            class="form-label"
+                                            >Camera Rotation Speed: </label
+                                        ><span id="cameraRotationSpeedValue"></span>
+                                        <input
+                                            type="range"
+                                            class="form-range"
+                                            min="1"
+                                            max="15"
+                                            id="cameraRotationSpeed"
+                                        />
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row p-2">
                                 <div class="col">
                                     <select
                                         id="regionsSelect"
@@ -345,7 +364,7 @@
                                         <div class="col">
                                             <div class="progress">
                                                 <div
-                                                id="score-progress-bar"
+                                                    id="score-progress-bar"
                                                     class="progress-bar progress-bar-striped bg-warning"
                                                     role="progressbar"
                                                     style="width: 75%"

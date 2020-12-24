@@ -34,6 +34,9 @@ let weatherSketch = null;
 let maxScoreWorld = 20000;
 let maxScore = 20000;
 let baseApiUrl = "https://halibun.pythonanywhere.com/api";
+let cameraRotationSpeed = 8;
+let initialCameraRotationSpeed = 8;
+let settingsModalOpen = false;
 const fpsControl = new FPS();
 
 function setup() {
@@ -57,6 +60,12 @@ function windowResized() {
     resizeCanvas(windowWidth, windowHeight);
 }
 
+function hideLoadingScreen() {
+    $("#funFact").removeClass("animate__backInLeft");
+    $("#funFact").addClass("animate__backOutLeft");
+    $(".loading").fadeOut("2000");
+}
+
 function initMotionTracking() {
     cameraLoaded = true;
     function removeElementsExcept(landmarks, elements) {
@@ -70,9 +79,7 @@ function initMotionTracking() {
     function onResults(results) {
         isLoaded = true;
         fpsControl.tick();
-        $("#funFact").removeClass("animate__backInLeft");
-        $("#funFact").addClass("animate__backOutLeft");
-        $(".loading").fadeOut("2000");
+        hideLoadingScreen();
         canvasCtx.save();
         canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
         canvasCtx.drawImage(
@@ -672,6 +679,9 @@ var fogAnimation = function (sketch) {
 function initButtons() {
     $("#btn-settings").click(function () {
         $("#settings-modal").modal("toggle");
+        $('#cameraRotationSpeedValue').text(` ${initialCameraRotationSpeed}x`);
+        $("#cameraRotationSpeed").val(initialCameraRotationSpeed);
+        cameraRotationSpeed = initialCameraRotationSpeed;
     });
 
     $("#btn-hint").click(function () {
@@ -684,6 +694,9 @@ function initButtons() {
 
     $("#cameraSwitch").prop("checked", showCamera);
     $("#cameraLabelsSwitch").prop("checked", showCameraLabels);
+    
+    $('#cameraRotationSpeed').val(cameraRotationSpeed);
+    $('#cameraRotationSpeedValue').text(` ${cameraRotationSpeed}x`);
 
     $("#cameraSwitch").change(function () {
         if (this.checked) {
@@ -693,9 +706,15 @@ function initButtons() {
         }
     });
 
+    $("#cameraRotationSpeed").change(function () {
+        cameraRotationSpeed = $(this).val();
+
+        $('#cameraRotationSpeedValue').text(` ${cameraRotationSpeed}x`);
+    });
+
     $("#saveSettings").click(function () {
         showCamera = $("#cameraSwitch").prop("checked");
-
+        initialCameraRotationSpeed = cameraRotationSpeed;
         if (showCamera) {
             $("#p5canvas").show("slow");
             $("#cameraLabelsSwitch").prop("disabled", false);
@@ -903,9 +922,15 @@ function trackPose() {
 
         let differenceX = initialNosePosition.x - currentNoseX;
         let differenceY = initialNosePosition.y - currentNoseY;
+        let rotationSpeed = initialCameraRotationSpeed;
+        if ($("#settings-modal").attr('aria-modal')){
+            rotationSpeed = cameraRotationSpeed;
+        }
+        console.log(rotationSpeed);
         if (distanceFromInitial > 1 / 28) {
-            let x = panorama.getPov().heading + differenceX * 4;
-            let y = panorama.getPov().pitch + differenceY * 4;
+            let x =
+                panorama.getPov().heading + differenceX * rotationSpeed;
+            let y = panorama.getPov().pitch + differenceY * rotationSpeed;
             if (y < 90 && y > -90) {
                 panorama.setPov({
                     heading: x,
