@@ -19,7 +19,6 @@ let locationData = null;
 let weatherData = null;
 let showCamera = true;
 let showCameraLabels = false;
-
 let selectedRegion = "all";
 let selectedSubregion = "all";
 let selectedCountry = "all";
@@ -34,13 +33,13 @@ let weatherSketch = null;
 let maxScoreWorld = 20000;
 let maxScore = 20000;
 let baseApiUrl = "https://halibun.pythonanywhere.com/api";
-let cameraRotationSpeed = 8;
-let initialCameraRotationSpeed = 8;
+let cameraRotationSpeed = 13;
+let initialCameraRotationSpeed = 13;
 let settingsModalOpen = false;
 let username = null;
-let scoreSend = false;
 let finalScore = null;
 const fpsControl = new FPS();
+let seenLocations = [];
 
 function setup() {
     document.getElementById("defaultCanvas0").remove();
@@ -203,14 +202,22 @@ function getRandomLocation() {
         url: url,
         type: "GET",
         success: function (res) {
-            locationData = res;
-            realCoords = { lat: res.lat, lng: res.lng };
-            let country = res.country;
-            hints.add({ capital: country.capital });
-            hints.add({ calling_code: country.calling_code });
-            hints.add({ currency_symbol: country.currency_symbol });
-            hints.add({ population: country.population });
-            getWeather(realCoords.lat, realCoords.lng);
+            if (seenLocations.includes(res.id)){
+                getRandomLocation();
+            } else {
+                if (seenLocations.length >= 20){
+                    seenLocations.shift();
+                }
+                seenLocations.push(res.id);
+                locationData = res;
+                realCoords = { lat: res.lat, lng: res.lng };
+                let country = res.country;
+                hints.add({ capital: country.capital });
+                hints.add({ calling_code: country.calling_code });
+                hints.add({ currency_symbol: country.currency_symbol });
+                hints.add({ population: country.population });
+                getWeather(realCoords.lat, realCoords.lng);
+            }
         },
         async: false,
     });
@@ -1140,7 +1147,6 @@ function kmFormatter(num) {
 
 function restartGame() {
     hints = new Set();
-    scoreSend = false;
     finalScore = null;
     usedHints = [];
     $("#sendScore").prop("disabled", false);
