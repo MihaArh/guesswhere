@@ -82,7 +82,17 @@
                         height="200"
                         webgl
                         class="selfie"
-                    ></canvas>
+                    >
+                    </canvas>
+                    <button
+                        id="btn-reset-nose"
+                        type="button"
+                        class="btn btn-primary btn-sm mb-3"
+                        data-placement="top"
+                        title="Reset Nose Position"
+                    >
+                        <i class="fa fa-refresh text-white"></i>
+                    </button>
                     <video class="input_video selfie" hidden></video>
                 </div>
                 <div class="col p-2 map-div">
@@ -236,7 +246,9 @@
                                             for="cameraRotationSpeed"
                                             class="form-label"
                                             >Camera Rotation Speed: </label
-                                        ><span id="cameraRotationSpeedValue"></span>
+                                        ><span
+                                            id="cameraRotationSpeedValue"
+                                        ></span>
                                         <input
                                             type="range"
                                             class="form-range"
@@ -244,7 +256,6 @@
                                             max="15"
                                             id="cameraRotationSpeed"
                                         />
-                                        
                                     </div>
                                 </div>
                             </div>

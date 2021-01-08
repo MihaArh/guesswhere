@@ -98,3 +98,7 @@ body {
 #score-map {
     height: 30%;
 }
+
+#btn-reset-nose{
+    z-index: 10000;
+}

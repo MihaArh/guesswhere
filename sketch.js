@@ -749,6 +749,10 @@ function initButtons() {
             restartGame();
         }
     });
+
+    $("#btn-reset-nose").click(function () {
+        initialNosePosition = {};
+    });
 }
 
 function initSelections() {
