@@ -67,9 +67,8 @@ function hideLoadingScreen() {
     $("#funFact").removeClass("animate__backInLeft");
     $("#funFact").addClass("animate__backOutLeft");
     $(".loading").fadeOut("2000");
-    
-    if(!username){
-        $("#usernameModal").modal("toggle");
+    if(isLoaded && !username){
+        $("#usernameModal").modal("show");
     }
 }
 
@@ -775,6 +774,7 @@ function initButtons() {
     $("#setUsernameBtn").click(function () {
         $("#usernameModal").modal("hide");
     });   
+
 }
 
 function initSelections() {
@@ -923,7 +923,7 @@ function initSelections() {
 }
 
 function trackPose() {
-    if (!selectedLocation && face && face.noseFace) {
+    if (!selectedLocation && face && face.noseFace && username && username != "") {
         let currentNoseX = face.noseFace.x;
         let currentNoseY = face.noseFace.y;
         if (
