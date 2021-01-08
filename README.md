@@ -1,2 +1,2 @@
 # Geoguesser
-Geoguesser game with p5.js support for face tracking.
+Geoguesser game with p5.js for drawing and mediapipe for face tracking.
