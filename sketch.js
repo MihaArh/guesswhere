@@ -37,6 +37,9 @@ let baseApiUrl = "https://halibun.pythonanywhere.com/api";
 let cameraRotationSpeed = 8;
 let initialCameraRotationSpeed = 8;
 let settingsModalOpen = false;
+let username = null;
+let scoreSend = false;
+let finalScore = null;
 const fpsControl = new FPS();
 
 function setup() {
@@ -45,7 +48,8 @@ function setup() {
     canvasElement = document.getElementById("p5canvas");
     controlsElement = document.getElementsByClassName("control-panel")[0];
     canvasCtx = canvasElement.getContext("2d");
-    initMotionTracking();
+    // initMotionTracking();
+    hideLoadingScreen();
     funFact();
     getRandomLocation();
     initPano();
@@ -64,6 +68,10 @@ function hideLoadingScreen() {
     $("#funFact").removeClass("animate__backInLeft");
     $("#funFact").addClass("animate__backOutLeft");
     $(".loading").fadeOut("2000");
+    
+    if(!username){
+        $("#usernameModal").modal("toggle");
+    }
 }
 
 function initMotionTracking() {
@@ -192,7 +200,7 @@ function getRandomLocation() {
     let region = selectedRegion.replace(" ", "%20");
     let subregion = selectedSubregion.replace(" ", "%20");
     let country = selectedCountry.replace(" ", "%20");
-    let url = `https://halibun.pythonanywhere.com/api/random/?region=${region}&subregion=${subregion}&country=${country}&format=json`;
+    let url = `${baseApiUrl}/random/?region=${region}&subregion=${subregion}&country=${country}&format=json`;
     $.ajax({
         url: url,
         type: "GET",
@@ -277,7 +285,6 @@ function initMap() {
             latlngbounds.extend(clickedCoords);
             latlngbounds.extend(realCoords);
             scoreMap.fitBounds(latlngbounds);
-
             showScore(dstn);
         }
     });
@@ -679,7 +686,7 @@ var fogAnimation = function (sketch) {
 function initButtons() {
     $("#btn-settings").click(function () {
         $("#settings-modal").modal("toggle");
-        $('#cameraRotationSpeedValue').text(` ${initialCameraRotationSpeed}x`);
+        $("#cameraRotationSpeedValue").text(` ${initialCameraRotationSpeed}x`);
         $("#cameraRotationSpeed").val(initialCameraRotationSpeed);
         cameraRotationSpeed = initialCameraRotationSpeed;
     });
@@ -694,9 +701,9 @@ function initButtons() {
 
     $("#cameraSwitch").prop("checked", showCamera);
     $("#cameraLabelsSwitch").prop("checked", showCameraLabels);
-    
-    $('#cameraRotationSpeed').val(cameraRotationSpeed);
-    $('#cameraRotationSpeedValue').text(` ${cameraRotationSpeed}x`);
+
+    $("#cameraRotationSpeed").val(cameraRotationSpeed);
+    $("#cameraRotationSpeedValue").text(` ${cameraRotationSpeed}x`);
 
     $("#cameraSwitch").change(function () {
         if (this.checked) {
@@ -709,7 +716,7 @@ function initButtons() {
     $("#cameraRotationSpeed").change(function () {
         cameraRotationSpeed = $(this).val();
 
-        $('#cameraRotationSpeedValue').text(` ${cameraRotationSpeed}x`);
+        $("#cameraRotationSpeedValue").text(` ${cameraRotationSpeed}x`);
     });
 
     $("#saveSettings").click(function () {
@@ -753,6 +760,22 @@ function initButtons() {
     $("#btn-reset-nose").click(function () {
         initialNosePosition = {};
     });
+
+    $("#username").keyup(function (e) {
+        username = $(this).val();
+        if (username != "") {
+            $("#setUsernameBtn").prop("disabled", false);
+        } else {
+            $("#setUsernameBtn").prop("disabled", true);
+        }
+        if (username != "" && (e.key === 'Enter' || e.keyCode === 13)) {
+            $("#usernameModal").modal("hide");
+        }
+    });
+
+    $("#setUsernameBtn").click(function () {
+        $("#usernameModal").modal("hide");
+    });   
 }
 
 function initSelections() {
@@ -927,13 +950,11 @@ function trackPose() {
         let differenceX = initialNosePosition.x - currentNoseX;
         let differenceY = initialNosePosition.y - currentNoseY;
         let rotationSpeed = initialCameraRotationSpeed;
-        if ($("#settings-modal").attr('aria-modal')){
+        if ($("#settings-modal").attr("aria-modal")) {
             rotationSpeed = cameraRotationSpeed;
         }
-        console.log(rotationSpeed);
         if (distanceFromInitial > 1 / 28) {
-            let x =
-                panorama.getPov().heading + differenceX * rotationSpeed;
+            let x = panorama.getPov().heading + differenceX * rotationSpeed;
             let y = panorama.getPov().pitch + differenceY * rotationSpeed;
             if (y < 90 && y > -90) {
                 panorama.setPov({
@@ -1081,6 +1102,7 @@ function showScore(distance) {
         restartGame();
     });
 
+    sendScore(score);
     $("#score-modal").modal("show");
 }
 
@@ -1096,6 +1118,7 @@ function calculateScore(distance) {
             .css("width", (i / maxScoreWorld) * 100 + "%")
             .attr("aria-valuenow", i);
     }
+    finalScore = score;
 }
 
 function initScoreMap() {
@@ -1118,7 +1141,10 @@ function kmFormatter(num) {
 
 function restartGame() {
     hints = new Set();
+    scoreSend = false;
+    finalScore = null;
     usedHints = [];
+    $("#sendScore").prop("disabled", false);
     $("#hint-list").empty();
     if (weatherSketch) weatherSketch.remove();
     initialNosePosition = {};
@@ -1219,4 +1245,112 @@ function getWeather(lat, lng) {
         },
         async: false,
     });
+}
+
+function sendScore() {
+    let url = `${baseApiUrl}/scoreboard/`;
+    let difficulty = "all";
+    if (selectedCountry != "all") {
+        difficulty = selectedCountry;
+    } else if (selectedSubregion != "all") {
+        difficulty = selectedSubregion;
+    } else if (selectedRegion != "all") {
+        difficulty = selectedRegion;
+    }
+    let data = {
+        username: username,
+        score: finalScore,
+        difficulty: difficulty,
+    };
+    $.ajax({
+        url: url,
+        type: "POST",
+        data: data,
+        success: function (res) {
+            fetchScoreBoard(res);
+        },
+        async: false,
+    });
+}
+
+function fetchScoreBoard(user = null) {
+    let difficulty = "all";
+    if (selectedCountry != "all") {
+        difficulty = selectedCountry;
+    } else if (selectedSubregion != "all") {
+        difficulty = selectedSubregion;
+    } else if (selectedRegion != "all") {
+        difficulty = selectedRegion;
+    }
+    let title = difficulty;
+    if (title == "all") {
+        title = "World";
+    }
+    $("#scoreboardTitle").text(`${title} Scoreboard`);
+    difficulty = difficulty.replace(" ", "%20");
+    let url = `${baseApiUrl}/scoreboard/?ordering=-score&difficulty=${difficulty}`;
+    $.ajax({
+        url: url,
+        type: "GET",
+        success: function (res) {
+            addToScoreboard(res, user);
+        },
+        async: false,
+    });
+}
+
+function addToScoreboard(res, user = null) {
+    let extend = res.length > 10;
+    let foundUser = false;
+
+    $("#scoreboardTable tbody").empty();
+
+    for (index = 0; index < res.length; index++) {
+        let item = res[index];
+        let data = {
+            position: index + 1,
+            username: item.username,
+            score: item.score,
+            mark: user && item.id == user.id,
+        };
+
+        if (index == 10 && extend) {
+            extendedRow();
+        }
+        if (index > 10 && (user == null || foundUser)) {
+            break;
+        }
+        if (index < 10 || (user && item.id == user.id)) {
+            createRow(data);
+        }
+
+        if (user && item.id == user.id) {
+            foundUser = true;
+        }
+    }
+}
+
+function createRow(data) {
+    let tr = $("<tr></tr>");
+    if (data.mark) {
+        tr = $("<tr class='table-info'></tr>");
+    }
+    let positionDiv = $("<th scope='row'></th>").text(data.position);
+    let usernameDiv = $("<td></td>").text(data.username);
+    let scoreDiv = $("<td></td>").text(data.score);
+    $(tr).append(positionDiv);
+    $(tr).append(usernameDiv);
+    $(tr).append(scoreDiv);
+    $("#scoreboardTable").append(tr);
+}
+
+function extendedRow() {
+    let tr = $("<tr></tr>");
+    let positionDiv = $("<th scope='row'></th>").text("");
+    let usernameDiv = $("<td></td>").text("...");
+    let scoreDiv = $("<td></td>").text("");
+    $(tr).append(positionDiv);
+    $(tr).append(usernameDiv);
+    $(tr).append(scoreDiv);
+    $("#scoreboardTable").append(tr);
 }

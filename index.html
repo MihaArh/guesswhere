@@ -320,6 +320,8 @@
 
         <div
             class="modal fade"
+            data-bs-backdrop="static"
+            data-bs-keyboard="false"
             id="score-modal"
             tabindex="-1"
             role="dialog"
@@ -390,9 +392,23 @@
                                 <div class="col">
                                     <div
                                         id="score-map"
-                                        style="height: 400px"
+                                        style="height: 300px"
                                     ></div>
                                 </div>
+                            </div>
+                            <hr />
+                            <div class="row">
+                                <h3 id="scoreboardTitle">Scoreboard</h3>
+                                <table id="scoreboardTable" class="table">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">#</th>
+                                            <th scope="col">Username</th>
+                                            <th scope="col">Score</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
                             </div>
                         </div>
                     </div>
@@ -402,7 +418,42 @@
                             type="button"
                             class="btn btn-primary"
                         >
-                            Try Again
+                            Play Again
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Username Modal -->
+        <div
+            class="modal fade"
+            id="usernameModal"
+            data-bs-backdrop="static"
+            data-bs-keyboard="false"
+            tabindex="1"
+            aria-labelledby="staticBackdropLabel"
+            aria-hidden="true"
+        >
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="staticBackdropLabel">
+                            Pick a username to start guessing
+                        </h5>
+                    </div>
+                    <div class="modal-body">
+                        <input
+                            type="text"
+                            class="form-control"
+                            id="username"
+                            placeholder="Username"
+                            aria-label="Username"
+                        />
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" disabled id="setUsernameBtn" class="btn btn-primary">
+                            Save Username
                         </button>
                     </div>
                 </div>
