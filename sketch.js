@@ -48,8 +48,7 @@ function setup() {
     canvasElement = document.getElementById("p5canvas");
     controlsElement = document.getElementsByClassName("control-panel")[0];
     canvasCtx = canvasElement.getContext("2d");
-    // initMotionTracking();
-    hideLoadingScreen();
+    initMotionTracking();
     funFact();
     getRandomLocation();
     initPano();
