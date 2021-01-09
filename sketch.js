@@ -212,15 +212,36 @@ function getRandomLocation() {
                 locationData = res;
                 realCoords = { lat: res.lat, lng: res.lng };
                 let country = res.country;
-                hints.add({ capital: country.capital });
-                hints.add({ calling_code: country.calling_code });
-                hints.add({ currency_symbol: country.currency_symbol });
-                hints.add({ population: country.population });
+                if (selectedCountry == "all"){
+                    hints.add({ capital: country.capital });
+                    hints.add({ calling_code: country.calling_code });
+                    hints.add({ currency_symbol: country.currency_symbol });
+                    hints.add({ population: country.population });
+                }                
+                hints.add({ post_code: res.postal_code });
+                let capitalCoords = {
+                    lat: country.capital_lat, lng: country.capital_lng
+                }
+                hints.add({ capital_distance: kmFormatter(getDistance(realCoords, capitalCoords)) });
+                hints.add({ direction: getDirection(realCoords, capitalCoords)})
                 getWeather(realCoords.lat, realCoords.lng);
+                console.log(hints);
             }
         },
         async: false,
     });
+}
+
+function getDirection(realCoords, capitalCoords){
+    let direction = "";
+    if (realCoords.lat > capitalCoords.lat) direction += "N"
+    else direction += "S"
+
+    if (realCoords.lng > capitalCoords.lng) direction += "E"
+    else direction += "W"
+
+    return direction;
+
 }
 
 function initPano() {
@@ -303,12 +324,12 @@ function getHint() {
         const randomElement = items[Math.floor(Math.random() * items.length)];
         let hintMessage = "";
         let saveHint = true;
+        console.log(items);
         switch (Object.keys(randomElement)[0]) {
             case "capital":
                 let capital = randomElement.capital;
                 let charsToRemove = Math.floor(capital.length / 2);
                 let capitalArray = capital.split("");
-
                 hintMessage = `Capital of this country is ${getRandomUnderscores(
                     capitalArray,
                     charsToRemove
@@ -347,6 +368,18 @@ function getHint() {
                 let timeFormated = milliseconds.toTimeString().substring(0, 5);
                 hintMessage = `Local time here is ${timeFormated}.`;
                 break;
+            case "capital_distance":
+                let capital_distance = randomElement.capital_distance
+                hintMessage = `We are ${capital_distance} away from capital.`;
+                break
+            case "post_code":
+                let post_code = randomElement.post_code
+                hintMessage = `Post code here is ${post_code}.`;
+                break
+            case "direction":
+                let direction = randomElement.direction
+                hintMessage = `We are ${direction} from capital.`;
+                break
         }
 
         $("#hint").removeClass("animate__backOutLeft");
