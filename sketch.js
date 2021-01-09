@@ -225,7 +225,6 @@ function getRandomLocation() {
                 hints.add({ capital_distance: kmFormatter(getDistance(realCoords, capitalCoords)) });
                 hints.add({ direction: getDirection(realCoords, capitalCoords)})
                 getWeather(realCoords.lat, realCoords.lng);
-                console.log(hints);
             }
         },
         async: false,
@@ -324,7 +323,6 @@ function getHint() {
         const randomElement = items[Math.floor(Math.random() * items.length)];
         let hintMessage = "";
         let saveHint = true;
-        console.log(items);
         switch (Object.keys(randomElement)[0]) {
             case "capital":
                 let capital = randomElement.capital;
