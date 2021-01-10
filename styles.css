@@ -102,3 +102,7 @@ body {
 #btn-reset-nose{
     z-index: 10000;
 }
+
+#score-modal{
+    font-size: 80%;
+}

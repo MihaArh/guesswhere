@@ -233,11 +233,11 @@ function getRandomLocation() {
 
 function getDirection(realCoords, capitalCoords){
     let direction = "";
-    if (realCoords.lat > capitalCoords.lat) direction += "N"
-    else direction += "S"
+    if (realCoords.lat > capitalCoords.lat) direction += "north "
+    else direction += "south "
 
-    if (realCoords.lng > capitalCoords.lng) direction += "E"
-    else direction += "W"
+    if (realCoords.lng > capitalCoords.lng) direction += "east"
+    else direction += "west"
 
     return direction;
 
