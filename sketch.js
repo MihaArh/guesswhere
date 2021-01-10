@@ -32,6 +32,8 @@ let stopAnimation = false;
 let weatherSketch = null;
 let maxScoreWorld = 20000;
 let maxScore = 20000;
+let initialHeading = 0;
+let initialPitch = 0;
 let baseApiUrl = "https://halibun.pythonanywhere.com/api";
 let cameraRotationSpeed = 13;
 let initialCameraRotationSpeed = 13;
@@ -1189,6 +1191,10 @@ function restartGame() {
     removeMapNotations();
     getRandomLocation();
     panorama.setPosition(realCoords);
+    panorama.setPov({
+        heading: 0,
+        pitch: 0,
+    });
     map.setZoom(2);
 }
 
